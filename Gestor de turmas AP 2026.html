@@ -189,7 +189,6 @@ footer strong{color:var(--ink2)}
   .cfg-grid{grid-template-columns:1fr}
 }
 </style>
-<script src="https://accounts.google.com/gsi/client" async defer onload="gdOnLoad()"></script>
 </head>
 <body>
 <div id="tst"></div>
@@ -278,17 +277,7 @@ footer strong{color:var(--ink2)}
       <div><div class="ttitle">⚙️ Configurações</div><div class="tinfo">Edite turmas, disciplinas e sincronização</div></div>
     </div>
 
-    <!-- Google Drive -->
-    <div class="cfg-section">
-      <div class="cfg-section-hdr">☁️ Sincronização — Google Drive</div>
-      <div class="cfg-body">
-        <div class="gd-status" id="gd-status">
-          <div class="gd-icon">📁</div>
-          <div class="gd-info">
-            <div class="gd-name" id="gd-name">Não ligado</div>
-            <div class="gd-email" id="gd-email">Clique em "Ligar ao Google Drive" para activar a sincronização automática</div>
-          </div>
-        </div>
+    
         <div style="display:flex;gap:10px;flex-wrap:wrap">
           <button class="ebtn gdrive" id="gd-login-btn" onclick="gdLogin()">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
@@ -334,7 +323,7 @@ footer strong{color:var(--ink2)}
 
   <footer>
     <div>📚 <strong>Gestor de Turmas</strong> — Academia da Palavra · CCIC</div>
-    <div>Sincronização automática · Google Drive · Backup local</div>
+    <div>Sincronização em tempo real · Firebase · Backup local automático</div>
     <div>Desenvolvido por <strong>Almerindo Assunção</strong> · © 2026</div>
   </footer>
 </div>
@@ -387,237 +376,69 @@ const lload = () => { try{const r=localStorage.getItem(LS);return r?JSON.parse(r
 //  Ficheiro: AcademiaP_dados.json na raiz do Drive
 //  Client ID: público, só pode ler/escrever ficheiros criados pela própria app (scope drive.file)
 // ════════════════════════════════════════════════════════════════════
-const GD = {
-  clientId: '700413946587-j1e6so1o16vr84cd7b6kipa6jdhh3l9m.apps.googleusercontent.com', // placeholder — ver nota
-  scope: 'https://www.googleapis.com/auth/drive.file',
-  fileName: 'AcademiaP_dados.json',
-  tokenClient: null,
-  token: null,
-  fileId: null,
-  userInfo: null,
+// ════════════════════════════════════════════════════════════════════
+//  FIREBASE CONFIG
+// ════════════════════════════════════════════════════════════════════
+const FB = {
+  apiKey:            "AIzaSyCLhhgUyhd4QS1Fw6Q5ai_wQytCcipro_Y",
+  authDomain:        "gestor-de-turmas-ap.firebaseapp.com",
+  databaseURL:       "https://gestor-de-turmas-ap-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId:         "gestor-de-turmas-ap",
+  storageBucket:     "gestor-de-turmas-ap.firebasestorage.app",
+  messagingSenderId: "685009671697",
+  appId:             "1:685009671697:web:cec07315adce77b11cc3b0"
 };
 
-// Nota: Para usar o Google Drive API precisas de criar um Client ID no Google Cloud Console.
-// Passos rápidos (5 min, grátis):
-// 1. console.cloud.google.com → Novo projecto "Academia Palavra"
-// 2. APIs & Services → Enable → Google Drive API
-// 3. Credentials → Create OAuth 2.0 Client ID → Web application
-// 4. Authorized JS origins: adicionar o URL onde a app está alojada
-// 5. Copiar o Client ID e substituir o valor acima
+let db, dbRef, fbOk = false;
+let ignoreEcho = false;
+let firstSnap  = true;
 
-// ── Google Identity Services carregado via tag <script> no head ──
-// Inicializa quando o script GSI carrega
-function gdInit() {
-  // Verificar se o GSI já está disponível
-  if (typeof google !== 'undefined' && google.accounts) {
-    gdSetupClient();
-  } else {
-    // Aguardar o script carregar
-    window._gdPending = true;
-  }
-}
-
-function gdSetupClient() {
-  GD.tokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: GD.clientId,
-    scope: GD.scope,
-    callback: gdTokenCallback,
-    error_callback: (err) => {
-      console.warn('GD error:', err);
-      setSyncUI('err', 'Google Drive: ' + (err.message || 'erro de acesso'));
-      toast('❌ Erro ao ligar ao Google Drive','e');
-    }
-  });
-  // Tentar token guardado
-  const saved = localStorage.getItem('gd_token');
-  if (saved) {
-    try {
-      const t = JSON.parse(saved);
-      if (t.expires_at && Date.now() < t.expires_at) {
-        GD.token = t;
-        gdGetUserInfo().then(ok => { if(ok) gdSync(); else localStorage.removeItem('gd_token'); });
-      } else {
-        localStorage.removeItem('gd_token');
-      }
-    } catch(e) { localStorage.removeItem('gd_token'); }
-  }
-}
-
-// Chamada pelo onload do script GSI
-window.gdOnLoad = () => {
-  if (window._gdPending) {
-    window._gdPending = false;
-    gdSetupClient();
-  }
-};
-
-async function gdTokenCallback(resp) {
-  if (resp.error) {
-    setSyncUI('err', 'Google Drive: ' + resp.error);
-    toast('❌ ' + resp.error_description || 'Acesso negado', 'e');
-    return;
-  }
-  GD.token = {
-    access_token: resp.access_token,
-    expires_at: Date.now() + ((resp.expires_in || 3600) - 60) * 1000,
-  };
-  localStorage.setItem('gd_token', JSON.stringify(GD.token));
-  const ok = await gdGetUserInfo();
-  if (ok) {
-    toast('✅ Google Drive ligado!', 'ok');
-    await gdSync();
-  }
-}
-
-async function gdGetUserInfo() {
+function fbInit() {
   try {
-    const r = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-      headers: { Authorization: 'Bearer ' + GD.token.access_token }
+    import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js').then(({initializeApp}) => {
+      import('https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js').then(({getDatabase,ref,set,onValue}) => {
+        window._fbSet = set;
+        const app = initializeApp(FB);
+        db    = getDatabase(app);
+        dbRef = ref(db, 'dados_v4');
+        fbOk  = true;
+
+        onValue(dbRef, snap => {
+          const remote = snap.val();
+          if (firstSnap) {
+            firstSnap = false;
+            if (!remote) { setSyncUI('ok','Ligado ✓ — base vazia'); return; }
+            if (ignoreEcho) { ignoreEcho=false; setSyncUI('ok','Ligado ✓'); return; }
+            if (applyPayload(remote)) {
+              lsave(remote);
+              const ap=document.querySelector('.tpanel.on');
+              if(ap&&ap.id!=='tCFG') renderTurma(ap.id);
+            }
+            setSyncUI('ok','Ligado ✓ — dados actualizados');
+            return;
+          }
+          if (ignoreEcho) { ignoreEcho=false; setSyncUI('ok','Guardado ✓'); return; }
+          if (applyPayload(remote)) {
+            lsave(remote);
+            const ap=document.querySelector('.tpanel.on');
+            if(ap&&ap.id!=='tCFG') renderTurma(ap.id);
+            const hora=lastTS?new Date(lastTS).toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'}):'—';
+            setSyncUI('ok','Sincronizado ✓');
+            toast('🔄 Actualizado às '+hora,'ok');
+          }
+        }, err=>{ console.warn('FB:',err); setSyncUI('err','Sem ligação — dados locais'); });
+      });
     });
-    if (!r.ok) { GD.token = null; updateGdUI(false); return false; }
-    GD.userInfo = await r.json();
-    updateGdUI(true);
+  } catch(e) { fbOk=false; setSyncUI('err','Firebase indisponível — modo local'); }
+}
+
+async function fbSave(p) {
+  if(!fbOk||!dbRef||!window._fbSet) return false;
+  try {
+    ignoreEcho=true;
+    await window._fbSet(dbRef,p);
     return true;
-  } catch(e) { return false; }
-}
-
-function updateGdUI(connected) {
-  const status = document.getElementById('gd-status');
-  const name   = document.getElementById('gd-name');
-  const email  = document.getElementById('gd-email');
-  const loginBtn  = document.getElementById('gd-login-btn');
-  const logoutBtn = document.getElementById('gd-logout-btn');
-  if (connected && GD.userInfo) {
-    status.classList.add('gd-connected');
-    name.textContent  = '✅ Ligado — ' + (GD.userInfo.name || 'Google Drive');
-    email.textContent = GD.userInfo.email || '';
-    loginBtn.style.display  = 'none';
-    logoutBtn.style.display = '';
-  } else {
-    status.classList.remove('gd-connected');
-    name.textContent  = 'Não ligado';
-    email.textContent = 'Clique em "Ligar ao Google Drive" para activar a sincronização automática';
-    loginBtn.style.display  = '';
-    logoutBtn.style.display = 'none';
-  }
-}
-
-window.gdLogin = () => {
-  if (!GD.tokenClient) {
-    toast('⏳ Google a carregar, tenta novamente…','w');
-    return;
-  }
-  try {
-    GD.tokenClient.requestAccessToken({ prompt: 'select_account' });
-  } catch(e) {
-    toast('❌ Erro: ' + e.message, 'e');
-  }
-};
-
-window.gdLogout = () => {
-  try { if (GD.token && typeof google !== 'undefined') google.accounts.oauth2.revoke(GD.token.access_token, ()=>{}); } catch(e){}
-  GD.token = null; GD.fileId = null; GD.userInfo = null;
-  localStorage.removeItem('gd_token');
-  updateGdUI(false);
-  setSyncUI('idle', 'Google Drive desligado — dados guardados localmente');
-  toast('🔌 Google Drive desligado','w');
-};
-
-async function gdEnsureToken() {
-  if (!GD.token) return false;
-  if (Date.now() > GD.token.expires_at) {
-    return new Promise(res => {
-      GD.tokenClient.callback = async resp => {
-        if (resp.error) { res(false); return; }
-        GD.token = { access_token: resp.access_token, expires_at: Date.now() + ((resp.expires_in||3600)-60)*1000 };
-        localStorage.setItem('gd_token', JSON.stringify(GD.token));
-        res(true);
-      };
-      GD.tokenClient.requestAccessToken({ prompt: '' });
-    });
-  }
-  return true;
-}
-
-async function gdFindFile() {
-  const r = await fetch(
-    `https://www.googleapis.com/drive/v3/files?q=name='${GD.fileName}'+and+trashed=false&fields=files(id,name)`,
-    { headers: { Authorization: 'Bearer ' + GD.token.access_token } }
-  );
-  const data = await r.json();
-  if (data.files && data.files.length > 0) {
-    GD.fileId = data.files[0].id;
-    return data.files[0].id;
-  }
-  return null;
-}
-
-async function gdRead() {
-  const ok = await gdEnsureToken(); if (!ok) return null;
-  const fid = await gdFindFile(); if (!fid) return null;
-  const r = await fetch(
-    `https://www.googleapis.com/drive/v3/files/${fid}?alt=media`,
-    { headers: { Authorization: 'Bearer ' + GD.token.access_token } }
-  );
-  if (!r.ok) return null;
-  return await r.json();
-}
-
-async function gdWrite(payload) {
-  const ok = await gdEnsureToken(); if (!ok) return false;
-  const body = JSON.stringify(payload);
-  let url, method;
-  if (GD.fileId) {
-    url    = `https://www.googleapis.com/upload/drive/v3/files/${GD.fileId}?uploadType=media`;
-    method = 'PATCH';
-  } else {
-    // Criar ficheiro
-    const meta = await fetch('https://www.googleapis.com/drive/v3/files', {
-      method: 'POST',
-      headers: { Authorization: 'Bearer ' + GD.token.access_token, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: GD.fileName, mimeType: 'application/json' })
-    });
-    const mj = await meta.json();
-    GD.fileId = mj.id;
-    url    = `https://www.googleapis.com/upload/drive/v3/files/${GD.fileId}?uploadType=media`;
-    method = 'PATCH';
-  }
-  const r = await fetch(url, {
-    method,
-    headers: { Authorization: 'Bearer ' + GD.token.access_token, 'Content-Type': 'application/json' },
-    body
-  });
-  return r.ok;
-}
-
-async function gdSync() {
-  if (!GD.token) return;
-  setSyncUI('load', 'A sincronizar com Google Drive…');
-  try {
-    const remote = await gdRead();
-    if (remote && remote.ts) {
-      const remoteDate = new Date(remote.ts);
-      const localDate  = lastTS ? new Date(lastTS) : new Date(0);
-      if (remoteDate > localDate) {
-        if (applyPayload(remote)) {
-          lsave(remote);
-          const ap = document.querySelector('.tpanel.on');
-          if (ap && ap.id !== 'tCFG') renderTurma(ap.id);
-        }
-        setSyncUI('ok', 'Sincronizado com Google Drive ✓');
-        toast('🔄 Dados actualizados do Drive','ok');
-        return;
-      }
-    }
-    // Locais são mais recentes ou Drive vazio — enviar
-    const p = buildPayload();
-    const wrote = await gdWrite(p);
-    lsave(p);
-    setSyncUI(wrote?'ok':'err', wrote ? 'Guardado no Google Drive ✓' : 'Erro ao guardar no Drive');
-  } catch(e) {
-    setSyncUI('err', 'Erro Drive — dados guardados localmente');
-    console.warn('gdSync:', e);
-  }
+  } catch(e) { ignoreEcho=false; return false; }
 }
 
 // ════════════════════════════════════════════════════════════════════
@@ -721,12 +542,10 @@ async function doSave() {
     const p = buildPayload();
     lsave(p);
     lastTS = p.ts;
-    if (GD.token) {
-      const ok = await gdWrite(p);
-      setSyncUI(ok?'ok':'err', ok ? 'Guardado no Drive ✓' : 'Sem internet — guardado localmente');
-    } else {
-      setSyncUI('ok', 'Guardado localmente ✓');
-    }
+    const ok = await fbSave(p);
+    lastTS = p.ts;
+    setSyncUI(ok?'ok':'err', ok ? 'Guardado ✓ — visível para todos' : 'Sem internet — guardado localmente');
+    if(ok) document.getElementById('stime').textContent=new Date().toLocaleString('pt-PT',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
   } catch(e) {
     setSyncUI('err','Erro ao guardar');
   } finally {
@@ -737,8 +556,9 @@ async function doSave() {
 
 window.syncNow = async () => {
   clearTimeout(saveTimer);
-  if (GD.token) { await gdSync(); toast('✅ Sincronizado com Google Drive','ok'); }
-  else { await doSave(); toast('💾 Guardado localmente','ok'); }
+  await doSave();
+  if(fbOk) toast('✅ Sincronizado com todos os professores','ok');
+  else toast('⚠️ Sem ligação — dados guardados localmente','w');
 };
 
 // ════════════════════════════════════════════════════════════════════
@@ -1054,8 +874,9 @@ const hj=()=>new Date().toISOString().split('T')[0];
   requestAnimationFrame(() => {
     const ap = document.querySelector('.tpanel.on');
     if (ap) renderTurma(ap.id);
-    setSyncUI('idle', 'Dados locais carregados');
-    gdInit();
+    setSyncUI('load','A ligar ao servidor…');
+    setTimeout(()=>{ if(document.getElementById('sdot').classList.contains('load')) setSyncUI('err','Sem ligação — dados locais'); },8000);
+    fbInit();
   });
 })();
 </script>
