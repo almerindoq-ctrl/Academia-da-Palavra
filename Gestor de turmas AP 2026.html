@@ -390,7 +390,7 @@ footer strong{color:var(--ink2)}
 </div>
 
 <script type="module">
-import { initializeApp }   from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { initializeApp, getApps, getApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getDatabase, ref, set, get, onValue, onDisconnect, serverTimestamp, remove }
   from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js';
 
@@ -410,9 +410,20 @@ const APP_PASSWORD = 'academia2026';
 
 // Nomes habituais para acesso rápido
 const KNOWN_USERS = [
-  'Almerindo','Sandro','Ismael','Osvaldo B','Paulo K','Paulo D',
-  'Marcelino','Marcelino C','Lisandro','Celma','Emilson',
-  'Elsando V','Petra V','Victor','Elson','Nelson G'
+  'Almerindo Assunção',
+  'Celma Reis',
+  'Elson Lopes',
+  'Emilson António',
+  'Ismael Baje',
+  'Lisandro Alegria',
+  'Marcelino Canda',
+  'Nélson Gunza',
+  'Osvaldo Betatela',
+  'Paulo Domingos',
+  'Paulo Kaúmba',
+  'Petra Vicente',
+  'Sandro Van-Dúnem',
+  'Victor Simba'
 ];
 
 // Caminho base no Firebase — cada turma tem o seu próprio nó independente
@@ -451,6 +462,7 @@ let db, fbOk = false;
 let currentUser = null;  // nome do utilizador autenticado
 let sessionId = Math.random().toString(36).slice(2); // ID único desta sessão
 let presenceRef = null;  // ref Firebase para presença deste utilizador
+let presenceInterval = null; // BUG 4 FIX: ID do heartbeat interval
 
 // Save por turma: cada turma tem o seu próprio timer, flag de saving e lastSaveId
 const tkState = {};
@@ -460,7 +472,10 @@ Object.keys(DEF).forEach(tk => {
 
 let lastTS = null;
 let pendingImport = null;
+const importandoTurmas = new Set(); // turmas cujos updates Firebase devem ser ignorados durante import
 const rendered = {};
+// Retry: turmas que falharam o save e precisam de retry quando rede voltar
+const pendentePorFalha = new Set();
 
 // Backup reminder: marcar se exportou JSON nesta sessão
 let exportedThisSession = false;
@@ -521,22 +536,41 @@ window.doLogout = () => {
 };
 
 function launchApp() {
+  // BUG 5 FIX: reiniciar estado ao (re)fazer login — evita herdar estado de sessão anterior
+  Object.keys(tkState).forEach(tk => {
+    clearTimeout(tkState[tk].saveTimer);
+    tkState[tk] = { saveTimer: null, isSaving: false, pendingSave: false, lastSaveId: null };
+  });
+  Object.keys(rendered).forEach(k => delete rendered[k]);
+  lastTS = null;
+  exportedThisSession = false;
+  turmas = {}; dados = {}; aulasData = {};
+  fbOk = false; db = null;
+
   document.getElementById('login-screen').classList.add('hidden');
   document.getElementById('main-app').classList.remove('hidden');
   document.getElementById('header-user').textContent = '👤 ' + currentUser;
 
   initStruct();
+
+  // Mostrar dados do localStorage imediatamente enquanto Firebase carrega
+  // (evita ecrã em branco durante a ligação)
   const cached = lload();
   if (cached) applyPayload(cached);
 
   requestAnimationFrame(() => {
     const ap = document.querySelector('.tpanel.on');
     if (ap) renderTurma(ap.id);
-    setSyncUI('load', 'A ligar…');
+    setSyncUI('load', 'A ligar ao Firebase…');
+
+    // Timeout de segurança: se Firebase não responder em 8s, manter dados locais
     setTimeout(() => {
-      if (document.getElementById('sdot').classList.contains('load'))
-        setSyncUI('err', 'Sem ligação — dados locais');
+      if (document.getElementById('sdot').classList.contains('load')) {
+        setSyncUI('err', 'Sem ligação — a usar dados locais');
+        // Dados do localStorage já foram aplicados acima — não fazer nada mais
+      }
     }, 8000);
+
     fbInit();
   });
 }
@@ -572,11 +606,17 @@ window.toast = (msg, tipo) => {
 
 // ─── SYNC UI ──────────────────────────────────────────────────────────
 function setSyncUI(state, txt) {
-  document.getElementById('sdot').className = 'sdot ' + state;
+  const dotEl = document.getElementById('sdot');
+  const wasErr = dotEl && dotEl.classList.contains('err');
+  dotEl.className = 'sdot ' + state;
   document.getElementById('stxt').textContent = txt;
   if (lastTS) {
     document.getElementById('stime').textContent =
       new Date(lastTS).toLocaleString('pt-PT', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
+  }
+  // Se passou de erro para ok (rede voltou), retentar saves pendentes
+  if (wasErr && state === 'ok') {
+    setTimeout(retryPendentes, 500);
   }
 }
 
@@ -606,13 +646,16 @@ function fixDados() {
     if (!dados[tk])     dados[tk]     = {};
     if (!aulasData[tk]) aulasData[tk] = {};
     turmas[tk].alunos.forEach(a => {
-      if (!dados[tk][a.id]) dados[tk][a.id] = {};
+      // BUG 7 FIX: usar String() nas chaves — Firebase serializa tudo como string
+      const sa = String(a.id);
+      if (!dados[tk][sa]) dados[tk][sa] = {};
       turmas[tk].discs.forEach(d => {
+        const sd = String(d.id);
         const nAulas = d.aulas || DEF[tk].aulas;
-        const ex = dados[tk][a.id][d.id];
+        const ex = dados[tk][sa][sd];
         if (!ex || !Array.isArray(ex.aulas) || ex.aulas.length !== nAulas) {
           const prev = (ex && Array.isArray(ex.aulas)) ? ex.aulas : [];
-          dados[tk][a.id][d.id] = {
+          dados[tk][sa][sd] = {
             aulas: Array.from({length: nAulas}, (_, i) => (prev[i] === 1 ? 1 : 0)),
             nota:  ex ? (parseFloat(ex.nota) || 0) : 0
           };
@@ -620,10 +663,12 @@ function fixDados() {
       });
     });
     turmas[tk].discs.forEach(d => {
+      // BUG E FIX: usar String(d.id) para aulasData — Firebase serializa chaves como string
+      const sd = String(d.id);
       const nAulas = d.aulas || DEF[tk].aulas;
-      const ex = aulasData[tk][d.id];
+      const ex = aulasData[tk][sd];
       if (!ex) {
-        aulasData[tk][d.id] = {datas: Array(nAulas).fill(''), dias: Array(nAulas).fill('')};
+        aulasData[tk][sd] = {datas: Array(nAulas).fill(''), dias: Array(nAulas).fill('')};
       } else {
         if (!Array.isArray(ex.datas) || ex.datas.length !== nAulas)
           ex.datas = Array.from({length: nAulas}, (_, i) => (ex.datas||[])[i] || '');
@@ -636,9 +681,37 @@ function fixDados() {
 
 // ─── ACESSO SEGURO A DADOS ────────────────────────────────────────────
 function getDado(tk, aid, did) {
-  return (dados[tk] && dados[tk][aid] && dados[tk][aid][did])
-    ? dados[tk][aid][did]
+  // BUG 7 FIX: Firebase converte chaves numéricas para strings — normalizar sempre
+  const sa = String(aid), sd = String(did);
+  return (dados[tk] && dados[tk][sa] && dados[tk][sa][sd])
+    ? dados[tk][sa][sd]
     : { aulas: [], nota: 0 };
+}
+
+// Normaliza todas as chaves numéricas para string (Firebase serializa assim)
+// BUG D FIX: normalizar também aulasData, não só dados
+function normalizarChaves(tk) {
+  if (dados[tk]) {
+    const novo = {};
+    Object.keys(dados[tk]).forEach(aid => {
+      const novoDiscs = {};
+      if (dados[tk][aid]) {
+        Object.keys(dados[tk][aid]).forEach(did => {
+          novoDiscs[String(did)] = dados[tk][aid][did];
+        });
+      }
+      novo[String(aid)] = novoDiscs;
+    });
+    dados[tk] = novo;
+  }
+  // BUG D FIX: normalizar aulasData também
+  if (aulasData[tk]) {
+    const novoAD = {};
+    Object.keys(aulasData[tk]).forEach(did => {
+      novoAD[String(did)] = aulasData[tk][did];
+    });
+    aulasData[tk] = novoAD;
+  }
 }
 
 // ─── PAYLOAD GLOBAL (para backup/restore) ────────────────────────────
@@ -682,8 +755,14 @@ function applyPayload(p) {
   if (p.nomes) Object.keys(p.nomes).forEach(tk => {
     if (!turmas[tk]) return;
     p.nomes[tk].forEach(n => {
-      const a = turmas[tk].alunos.find(a => a.id === n.id);
-      if (a && n.nome) a.nome = n.nome;
+      let a = turmas[tk].alunos.find(a => a.id === n.id);
+      // PROBLEMA I FIX: se aluno não existe na estrutura actual, adicionar
+      if (!a && n.id && n.nome) {
+        a = {id: n.id, nome: n.nome};
+        turmas[tk].alunos.push(a);
+      } else if (a && n.nome) {
+        a.nome = n.nome;
+      }
     });
   });
   if (p.profs) Object.keys(p.profs).forEach(tk => {
@@ -693,6 +772,8 @@ function applyPayload(p) {
       if (d && pd.professor) d.professor = pd.professor;
     });
   });
+  // BUG H FIX: normalizar chaves após importação JSON (pode ter chaves numéricas)
+  Object.keys(DEF).forEach(tk => normalizarChaves(tk));
   fixDados();
   if (p.ts) lastTS = p.ts;
   return true;
@@ -703,6 +784,8 @@ function applyTurmaPayload(tk, p) {
   if (!p) return false;
   if (p.dados)     dados[tk]     = JSON.parse(JSON.stringify(p.dados));
   if (p.aulasData) aulasData[tk] = JSON.parse(JSON.stringify(p.aulasData));
+  // BUG 7 FIX: normalizar chaves após receber do Firebase (strings vs numbers)
+  normalizarChaves(tk);
   if (p.nomes && turmas[tk]) {
     p.nomes.forEach(n => {
       const a = turmas[tk].alunos.find(a => a.id === n.id);
@@ -715,7 +798,8 @@ function applyTurmaPayload(tk, p) {
       if (d && pd.professor) d.professor = pd.professor;
     });
   }
-  fixDados();
+  // BUG 2 FIX: fixDados() removido daqui — chamado uma vez no final do arranque
+  // Para updates em tempo real (não firstSnap), chamar fixDados para esta turma apenas
   if (p.ts && (!lastTS || p.ts > lastTS)) lastTS = p.ts;
   return true;
 }
@@ -723,13 +807,15 @@ function applyTurmaPayload(tk, p) {
 // ─── FIREBASE ─────────────────────────────────────────────────────────
 function fbInit() {
   try {
-    const app = initializeApp(FB_CFG);
+    // BUG K FIX: evitar erro se Firebase já foi inicializado (ex: duplo login)
+    const app = getApps().length ? getApp() : initializeApp(FB_CFG);
     db   = getDatabase(app);
     fbOk = true;
 
     // Contador: aguardar que TODAS as turmas respondam antes de actualizar UI
     const tkKeys = Object.keys(DEF);
     let snapsReceived = 0;
+    const tkComDadosRemoto = new Set(); // BUG 1 FIX: rastrear quais turmas tinham dados no Firebase
 
     tkKeys.forEach(tk => {
       const tkRef = ref(db, `${FB_BASE}/${tk}`);
@@ -743,16 +829,19 @@ function fbInit() {
           snapsReceived++;
           tkState[tk].lastSaveId = null;
 
-          if (remote) applyTurmaPayload(tk, remote);
+          if (remote && !importandoTurmas.has(tk)) {
+            tkComDadosRemoto.add(tk); // registar que esta turma tinha dados
+            applyTurmaPayload(tk, remote);
+          }
 
-          // Quando TODAS as turmas responderem — render e UI final
+          // Quando TODAS as turmas responderem — fixDados final, render e UI
           if (snapsReceived === tkKeys.length) {
+            fixDados();
             lsave(buildFullPayload());
             const ap = document.querySelector('.tpanel.on');
             if (ap && ap.id !== 'tCFG') renderTurma(ap.id);
             setSyncUI('ok', 'Ligado ✓ — dados actualizados');
-            // Se Firebase estava vazio, migrar dados do localStorage
-            tentarMigracao();
+            if (importandoTurmas.size === 0) tentarMigracao(tkComDadosRemoto);
           }
           return;
         }
@@ -766,9 +855,13 @@ function fbInit() {
 
         if (!remote) { setSyncUI('ok', 'Base limpa remotamente'); return; }
 
+        // Ignorar updates remotos durante importação de JSON
+        if (importandoTurmas.has(tk)) return;
+
         // Update de outro utilizador
         const quem = remote.editedBy || 'Outro professor';
         applyTurmaPayload(tk, remote);
+        fixDados(); // garantir consistência após update remoto
         lsave(buildFullPayload());
 
         const ap = document.querySelector('.tpanel.on');
@@ -804,13 +897,23 @@ function fbInit() {
 }
 
 // Migração: se Firebase veio vazio mas localStorage tem dados, sincronizar
-function tentarMigracao() {
-  const todasVazias = Object.keys(DEF).every(tk =>
-    !dados[tk] || Object.keys(dados[tk]).length === 0
-  );
-  if (!todasVazias) return;
+// BUG 1 FIX: usar flag de turmas remotas recebidas (não dados[] que já foi preenchido por fixDados)
+function tentarMigracao(tkComDadosRemoto) {
+  // tkComDadosRemoto = set de turmas que receberam dados reais do Firebase
+  // Se NENHUMA turma tinha dados reais no Firebase, mas LS tem dados → migrar
+  const nenhumDadoRemoto = tkComDadosRemoto.size === 0;
+  if (!nenhumDadoRemoto) return;
   const cached = lload();
   if (!cached || !cached.dados) return;
+  // Verificar se o LS tem dados reais (não só zeros)
+  const lsTemDados = Object.values(cached.dados).some(turma =>
+    Object.values(turma).some(aluno =>
+      Object.values(aluno).some(disc =>
+        disc && Array.isArray(disc.aulas) && disc.aulas.some(v => v === 1)
+      )
+    )
+  );
+  if (!lsTemDados) return;
   console.log('Firebase vazio — a migrar dados locais...');
   if (applyPayload(cached)) {
     const ap = document.querySelector('.tpanel.on');
@@ -822,7 +925,7 @@ function tentarMigracao() {
         .catch(e => console.warn(`Migração ${tk} erro:`, e));
     });
     lsave(buildFullPayload());
-    toast('✅ Dados sincronizados com Firebase', 'ok');
+    toast('✅ Dados locais migrados para Firebase', 'ok');
   }
 }
 
@@ -847,8 +950,8 @@ function setupPresence() {
   set(presenceRef, { name: currentUser, ts: Date.now() });
   onDisconnect(presenceRef).remove();
 
-  // Heartbeat a cada 30s para manter presença actualizada
-  setInterval(() => {
+  // BUG 4 FIX: guardar ID do interval para limpar no logout
+  presenceInterval = setInterval(() => {
     if (presenceRef && fbOk) set(presenceRef, { name: currentUser, ts: Date.now() }).catch(()=>{});
   }, 30000);
 
@@ -870,6 +973,8 @@ function setupPresence() {
 }
 
 function cleanupPresence() {
+  // BUG 4 FIX: limpar o interval ao sair para não acumular heartbeats
+  if (presenceInterval) { clearInterval(presenceInterval); presenceInterval = null; }
   if (presenceRef && fbOk) remove(presenceRef).catch(()=>{});
   presenceRef = null;
 }
@@ -909,11 +1014,10 @@ async function doSaveTurma(tk) {
   if (s.isSaving) return;
   s.isSaving = true;
   s.pendingSave = false;
-  const btn = document.getElementById('sbtn');
-  if (btn) btn.disabled = true;
+  // BUG F FIX: não tocar no botão sbtn aqui — controlado centralmente pelo syncNow
+  // Para saves automáticos (schedSave), o botão não precisa de ser desabilitado
   try {
     const p = buildTurmaPayload(tk);
-    // Guardar localmente o estado completo
     lsave(buildFullPayload());
     const ok = await fbSaveTurma(tk, p);
     lastTS = p.ts;
@@ -926,9 +1030,9 @@ async function doSaveTurma(tk) {
   } catch(e) {
     setSyncUI('err', 'Erro ao guardar');
     console.error('doSaveTurma error:', e);
+    pendentePorFalha.add(tk); // Retry quando rede voltar
   } finally {
     s.isSaving = false;
-    if (btn) btn.disabled = false;
     if (s.pendingSave) {
       s.pendingSave = false;
       clearTimeout(s.saveTimer);
@@ -937,17 +1041,44 @@ async function doSaveTurma(tk) {
   }
 }
 
+// Retry automático das turmas que falharam — chamado quando Firebase reconecta
+function retryPendentes() {
+  if (pendentePorFalha.size === 0) return;
+  console.log('A retentar saves pendentes:', [...pendentePorFalha]);
+  const tks = [...pendentePorFalha];
+  pendentePorFalha.clear();
+  tks.forEach(tk => schedSave(tk));
+}
+
 window.syncNow = async () => {
+  // BUG 3 FIX: desabilitar botão uma vez centralmente para evitar race condition
+  const btn = document.getElementById('sbtn');
+  if (btn) btn.disabled = true;
   Object.keys(DEF).forEach(tk => { clearTimeout(tkState[tk].saveTimer); });
-  await Promise.all(Object.keys(DEF).map(tk => doSaveTurma(tk)));
-  const dotClass = document.getElementById('sdot').className;
-  if (dotClass.includes('ok')) toast('✅ Todas as turmas sincronizadas', 'ok');
-  else toast('⚠️ Sem ligação — dados guardados localmente', 'w');
+  try {
+    await Promise.all(Object.keys(DEF).map(tk => doSaveTurma(tk)));
+    const dotClass = document.getElementById('sdot').className;
+    if (dotClass.includes('ok')) toast('✅ Todas as turmas sincronizadas', 'ok');
+    else toast('⚠️ Sem ligação — dados guardados localmente', 'w');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
 };
 
 // ─── LEMBRETE DE BACKUP AO FECHAR ────────────────────────────────────
 window.addEventListener('beforeunload', e => {
   if (!currentUser) return;
+  // ISSUE 1 FIX: forçar save imediato para todas as turmas com save pendente
+  // (cancela os timers de 600ms e grava agora usando sendBeacon / sync XHR não disponível,
+  //  mas pelo menos garantimos que o lsave corre antes de fechar)
+  Object.keys(DEF).forEach(tk => {
+    const s = tkState[tk];
+    if (s.saveTimer || s.pendingSave) {
+      clearTimeout(s.saveTimer);
+      // Guardar no localStorage imediatamente (Firebase async não garante antes de fechar)
+      try { lsave(buildFullPayload()); } catch(ex) {}
+    }
+  });
   if (!exportedThisSession) {
     e.preventDefault();
     e.returnValue = 'Não fizeste backup JSON nesta sessão. Sair mesmo assim?';
@@ -1013,7 +1144,8 @@ window.toggleDisc = (tk, did) => {
 
 function buildDiscBody(tk, disc) {
   const t  = turmas[tk];
-  const ai = aulasData[tk][disc.id] || {datas: [], dias: []};
+  // BUG C FIX: usar String(disc.id) para aulasData
+  const ai = aulasData[tk][String(disc.id)] || {datas: [], dias: []};
   let h = `<div class="dprof-row">
     <span class="dprof-label">👤 Professor</span>
     <input class="dprof-input" value="${esc(disc.professor)}"
@@ -1140,12 +1272,13 @@ window.updateResumo = tk => {
 // PRESENÇA: checkbox marcado = 1 (presente), desmarcado = 0 (falta/ausente)
 // Valor null = ainda não registado (aula futura) — não conta nem como presença nem falta
 window.marcaP = (tk, aid, did, i, v) => {
-  if (!dados[tk]?.[aid]?.[did]) return;
-  // Marcado → 1 (presente). Desmarcado → 0 (falta explícita).
-  dados[tk][aid][did].aulas[i] = v ? 1 : 0;
+  // BUG 7 FIX: normalizar chaves para string
+  const sa = String(aid), sd = String(did);
+  if (!dados[tk]?.[sa]?.[sd]) return;
+  dados[tk][sa][sd].aulas[i] = v ? 1 : 0;
   const row = document.getElementById(`row-${tk}-${aid}-${did}`);
   if (row) {
-    const aulas = dados[tk][aid][did].aulas;
+    const aulas = dados[tk][sa][sd].aulas;
     row.querySelector('.cell-pres').textContent = aulas.filter(x => x === 1).length;
     row.querySelector('.cell-falt').textContent = aulas.filter(x => x === 0).length;
   }
@@ -1154,11 +1287,13 @@ window.marcaP = (tk, aid, did, i, v) => {
 };
 
 window.editNota = (tk, aid, did, v) => {
-  if (!dados[tk]?.[aid]?.[did]) return;
+  // BUG 7 FIX: normalizar chaves para string
+  const sa = String(aid), sd = String(did);
+  if (!dados[tk]?.[sa]?.[sd]) return;
   let val = parseFloat(v) || 0;
   if (val < 0)  val = 0;
   if (val > 20) val = 20;
-  dados[tk][aid][did].nota = val;
+  dados[tk][sa][sd].nota = val;
   updateResumo(tk);
   schedSave(tk);
 };
@@ -1169,10 +1304,13 @@ window.editProf = (tk, did, v) => {
 };
 
 window.editData = (tk, did, i, v) => {
-  if (aulasData[tk]?.[did]) { aulasData[tk][did].datas[i] = v; schedSave(tk); }
+  // BUG C FIX: normalizar did para string — Firebase usa strings como chaves
+  const sd = String(did);
+  if (aulasData[tk]?.[sd]) { aulasData[tk][sd].datas[i] = v; schedSave(tk); }
 };
 window.editDia = (tk, did, i, v) => {
-  if (aulasData[tk]?.[did]) { aulasData[tk][did].dias[i] = v; schedSave(tk); }
+  const sd = String(did);
+  if (aulasData[tk]?.[sd]) { aulasData[tk][sd].dias[i] = v; schedSave(tk); }
 };
 
 window.editNome = (el, tk, aid) => {
@@ -1295,56 +1433,143 @@ window.saveCfgDiscs = () => {
 };
 
 // ─── EXPORTAR / IMPORTAR ──────────────────────────────────────────────
+
+// Separador ponto-e-vírgula — padrão Excel em Portugal/Angola
+const SEP = ';';
+
+// BOM UTF-8 — obrigatório para Excel reconhecer acentos e caracteres especiais
+const BOM = '\uFEFF';
+
+// Escape de célula CSV: envolve em aspas se necessário
 const csvEsc = v => {
   const s = String(v ?? '');
-  if (s.includes('"') || s.includes(',') || s.includes('\n') || s.includes('\r'))
+  if (s.includes('"') || s.includes(SEP) || s.includes('\n') || s.includes('\r'))
     return '"' + s.replace(/"/g, '""') + '"';
   return s;
 };
 
+// Linha CSV: recebe array de valores, devolve linha formatada com \r\n (Windows)
+const csvRow = cols => cols.map(csvEsc).join(SEP) + '\r\n';
+
+// Linha em branco com N colunas vazias
+const csvBlank = () => '\r\n';
+
+// Número com vírgula decimal (padrão PT)
+const ptNum = n => (typeof n === 'number' ? n : parseFloat(n) || 0)
+  .toFixed(2).replace('.', ',');
+const ptPct = (p, tot) => tot > 0
+  ? ((p / tot) * 100).toFixed(1).replace('.', ',') + '%'
+  : '—';
+
+// Constrói o CSV completo de uma turma
+function buildTurmaCSV(tk) {
+  const t = turmas[tk];
+  const dataExport = new Date().toLocaleDateString('pt-PT');
+  let c = BOM;
+
+  // ═══ CABEÇALHO ═══════════════════════════════════════════════════
+  c += csvRow(['ACADEMIA DA PALAVRA — GESTOR DE TURMAS']);
+  c += csvRow(['Turma', t.nome]);
+  c += csvRow(['Horário', t.horario]);
+  c += csvRow(['Exportado em', dataExport]);
+  c += csvRow(['Total de alunos', t.alunos.length]);
+  c += csvBlank();
+
+  // ═══ SECÇÃO 1: RESUMO GERAL (notas + assiduidade) ════════════════
+  c += csvRow(['SECÇÃO 1 — RESUMO GERAL']);
+  c += csvBlank();
+
+  // Cabeçalho das colunas
+  const cabDiscs = t.discs.map(d => d.nome + ' — Nota');
+  c += csvRow(['Nº', 'Nome do Aluno', ...cabDiscs,
+               'Média Final', 'Presenças', 'Faltas', '% Assiduidade']);
+
+  t.alunos.forEach((a, idx) => {
+    // Separador de grupo (Huambo: Refrescamento / 1ª Vez)
+    const grupos = DEF[tk] && DEF[tk].grupos ? DEF[tk].grupos : null;
+    if (grupos) {
+      const grp = grupos.find(g => g.de === idx + 1);
+      if (grp) {
+        c += csvBlank();
+        c += csvRow(['— ' + grp.label + ' (' + (grp.ate - grp.de + 1) + ' alunos) —']);
+      }
+    }
+
+    let somaNotas = 0, pres = 0, falt = 0;
+    const notas = t.discs.map(d => {
+      const dd = getDado(tk, a.id, d.id);
+      somaNotas += dd.nota;
+      pres += dd.aulas.filter(x => x === 1).length;
+      falt += dd.aulas.filter(x => x === 0).length;
+      return dd.nota === 0 ? '0' : ptNum(dd.nota);
+    });
+
+    const media = ptNum(somaNotas / t.discs.length);
+    const pct   = ptPct(pres, pres + falt);
+
+    c += csvRow([idx + 1, a.nome, ...notas, media, pres, falt, pct]);
+  });
+
+  c += csvBlank();
+  c += csvBlank();
+
+  // ═══ SECÇÃO 2: DETALHE DE PRESENÇAS POR DISCIPLINA ═══════════════
+  c += csvRow(['SECÇÃO 2 — DETALHE DE PRESENÇAS POR DISCIPLINA']);
+
+  t.discs.forEach(disc => {
+    const ai = aulasData[tk][String(disc.id)] || {datas: [], dias: []};
+    c += csvBlank();
+    c += csvRow(['Disciplina', disc.nome]);
+    c += csvRow(['Professor', disc.professor || '—']);
+
+    // Cabeçalho: uma coluna por aula com etiqueta e data
+    const cabAulas = [];
+    for (let i = 0; i < disc.aulas; i++) {
+      const lbl   = (disc.info && disc.info[i]) ? disc.info[i] : ('Aula ' + (i + 1));
+      const dtAula = ai.datas[i] ? ai.datas[i] : '';
+      const diaAula = ai.dias[i] ? ai.dias[i] : '';
+      cabAulas.push(lbl + (dtAula ? ' (' + dtAula + (diaAula ? ' ' + diaAula : '') + ')' : ''));
+    }
+    c += csvRow(['Nº', 'Nome do Aluno', ...cabAulas, 'Total P', 'Total F']);
+
+    t.alunos.forEach((a, idx) => {
+      const grupos = DEF[tk] && DEF[tk].grupos ? DEF[tk].grupos : null;
+      if (grupos) {
+        const grp = grupos.find(g => g.de === idx + 1);
+        if (grp) {
+          c += csvBlank();
+          c += csvRow(['— ' + grp.label + ' —']);
+        }
+      }
+      const d  = getDado(tk, a.id, disc.id);
+      const pr = d.aulas.filter(x => x === 1).length;
+      const ft = d.aulas.filter(x => x === 0).length;
+      // P = Presente, F = Falta, — = não registado
+      const marcas = d.aulas.map(v => v === 1 ? 'P' : v === 0 ? 'F' : '—');
+      c += csvRow([idx + 1, a.nome, ...marcas, pr, ft]);
+    });
+  });
+
+  return c;
+}
+
 window.exportCSV = tk => {
   const t = turmas[tk];
-  let c = `Academia da Palavra - ${t.nome}\n${t.horario}\n\nAluno,`;
-  t.discs.forEach(d => { c += `${csvEsc(d.nome)} (Nota),`; });
-  c += 'Média Final,Presenças,Faltas,% Assiduidade\n';
-  t.alunos.forEach(a => {
-    c += `${csvEsc(a.nome)},`;
-    let m = 0, p = 0, f = 0;
-    t.discs.forEach(d => {
-      const dd = getDado(tk, a.id, d.id);
-      c += `${dd.nota},`;
-      m += dd.nota;
-      p += dd.aulas.filter(x => x === 1).length;
-      f += dd.aulas.filter(x => x === 0).length;
-    });
-    const tot = p + f;
-    c += `${(m/t.discs.length).toFixed(2)},${p},${f},${tot>0?((p/tot)*100).toFixed(1):'0.0'}%\n`;
-  });
-  dl(c, `${tk}_${hoje()}.csv`, 'text/csv;charset=utf-8;');
+  const nome = t.nome.replace(/[^a-zA-Z0-9À-ÿ\s]/g, '').trim().replace(/\s+/g, '_');
+  dl(buildTurmaCSV(tk), 'AP_' + nome + '_' + hoje() + '.csv', 'text/csv;charset=utf-8;');
+  toast('📥 CSV exportado — abre com Excel', 'ok');
 };
 
 window.exportAll = () => {
-  let c = `Academia da Palavra - Todas as Turmas\n${new Date().toLocaleDateString('pt-PT')}\n`;
-  Object.keys(turmas).forEach(tk => {
-    const t = turmas[tk];
-    c += `\n\n=== ${t.nome} (${t.horario}) ===\n\nAluno,`;
-    t.discs.forEach(d => { c += `${csvEsc(d.nome)} (Nota),`; });
-    c += 'Média Final,Presenças,Faltas,% Assiduidade\n';
-    t.alunos.forEach(a => {
-      c += `${csvEsc(a.nome)},`;
-      let m = 0, p = 0, f = 0;
-      t.discs.forEach(d => {
-        const dd = getDado(tk, a.id, d.id);
-        c += `${dd.nota},`;
-        m += dd.nota;
-        p += dd.aulas.filter(x => x === 1).length;
-        f += dd.aulas.filter(x => x === 0).length;
-      });
-      const tot = p + f;
-      c += `${(m/t.discs.length).toFixed(2)},${p},${f},${tot>0?((p/tot)*100).toFixed(1):'0.0'}%\n`;
-    });
+  const tks = Object.keys(DEF);
+  tks.forEach((tk, i) => {
+    setTimeout(() => {
+      const t = turmas[tk];
+      const nome = t.nome.replace(/[^a-zA-Z0-9À-ÿ\s]/g, '').trim().replace(/\s+/g, '_');
+      dl(buildTurmaCSV(tk), 'AP_' + nome + '_' + hoje() + '.csv', 'text/csv;charset=utf-8;');
+    }, i * 500);
   });
-  dl(c, `Todas_Turmas_${hoje()}.csv`, 'text/csv;charset=utf-8;');
+  toast('📊 A exportar ' + tks.length + ' ficheiros CSV…', 'ok');
 };
 
 window.exportJSON = () => {
@@ -1372,11 +1597,21 @@ window.importJSON = input => {
 window.confirmarImportacao = () => {
   if (!pendingImport) return;
   try {
+    // Activar flag para bloquear updates do Firebase durante a importação
+    Object.keys(DEF).forEach(tk => importandoTurmas.add(tk));
+
     const ok = applyPayload(pendingImport);
-    if (!ok) { fecharModal(); pendingImport = null; return; }
+    if (!ok) {
+      importandoTurmas.clear();
+      fecharModal();
+      pendingImport = null;
+      return;
+    }
+
     lsave(buildFullPayload());
     fecharModal();
     Object.keys(rendered).forEach(k => delete rendered[k]);
+
     const activePanel = document.querySelector('.tpanel.on');
     const targetId = (activePanel && activePanel.id !== 'tCFG') ? activePanel.id : 'tA';
     document.querySelectorAll('.tpanel').forEach(p => p.classList.remove('on'));
@@ -1388,9 +1623,29 @@ window.confirmarImportacao = () => {
     if (fp) fp.classList.add('on');
     if (idx >= 0 && allBtns[idx]) allBtns[idx].classList.add('on');
     renderTurma(targetId);
-    Object.keys(DEF).forEach(tk => doSaveTurma(tk));
-    toast('✅ Dados importados com sucesso', 'ok');
+
+    // PROBLEMA K FIX: só gravar turmas que existem no JSON importado
+    // — não apagar dados de turmas ausentes no backup
+    const turmasNoJSON = Object.keys(pendingImport.dados || {})
+      .filter(tk => DEF[tk]); // só turmas válidas do DEF actual
+    const turmasParaGravar = turmasNoJSON.length > 0
+      ? turmasNoJSON
+      : Object.keys(DEF); // fallback: gravar todas se JSON não tem estrutura por turma
+
+    setSyncUI('saving', 'A guardar dados importados…');
+    Promise.all(turmasParaGravar.map(tk => doSaveTurma(tk)))
+      .then(() => {
+        importandoTurmas.clear();
+        toast('✅ Dados importados e guardados no Firebase', 'ok');
+      })
+      .catch(err => {
+        importandoTurmas.clear();
+        console.error('Erro ao guardar após importação:', err);
+        toast('⚠️ Dados importados mas erro ao guardar na nuvem', 'w');
+      });
+
   } catch(err) {
+    importandoTurmas.clear();
     toast('❌ Erro na importação: ' + err.message, 'e');
     console.error('importação error:', err);
   }
