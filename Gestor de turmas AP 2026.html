@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Turmas CCIC">
+<meta name="theme-color" content="#1a1a2e">
+<title>Gestor de Turmas — Academia da Palavra</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%231a1a2e'/%3E%3Ctext x='50' y='38' font-family='Georgia' font-size='26' font-weight='bold' fill='%23c9a84c' text-anchor='middle'%3EAP%3C/text%3E%3Ctext x='50' y='62' font-family='Arial' font-size='13' fill='rgba(255,255,255,0.7)' text-anchor='middle'%3ETurmas%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@400;600&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@400;600&display=swap" rel="stylesheet"></noscript>
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --ink:#0f0f1a;--ink2:#3a3a5c;--ink3:#7c7c9a;
+  --gold:#c9a84c;--gold2:#e8c96c;--gold-bg:#fdf8ee;
+  --blue:#2c3e8c;--blue2:#4a5db5;--blue-light:#e8ecff;
+  --green:#1a6644;--green-light:#e6f4ed;
+  --red:#9b2335;--red-light:#fce8eb;
+  --bg:#f0f1f8;--surface:white;--border:#e2e4f0;
+  --radius:12px;--r-sm:8px;
+  --shadow:0 2px 16px rgba(15,15,40,.08);
+  --shadow-md:0 4px 28px rgba(15,15,40,.13);
+  --shadow-lg:0 8px 48px rgba(15,15,40,.18);
+  --font-serif:'Playfair Display',Georgia,serif;
+  --font-sans:'DM Sans',system-ui,sans-serif;
+  --t:all .18s cubic-bezier(.4,0,.2,1);
+}
+html,body{height:100%;font-family:var(--font-sans);background:var(--bg);color:var(--ink)}
+#tst{
+  position:fixed;bottom:22px;left:50%;
+  transform:translateX(-50%) translateY(10px);
+  padding:11px 22px;border-radius:100px;font-size:13px;font-weight:500;
+  color:white;background:var(--ink);opacity:0;
+  transition:opacity .22s,transform .22s;pointer-events:none;
+  z-index:10001;white-space:nowrap;box-shadow:var(--shadow-md);
+}
+#tst.s{opacity:1;transform:translateX(-50%) translateY(0)}
+#tst.ok{background:var(--green)}#tst.w{background:#b05c00}#tst.e{background:var(--red)}
+.app{max-width:1680px;margin:0 auto;padding:20px 16px}
+header{
+  background:var(--ink);color:white;
+  padding:22px 28px;border-radius:var(--radius);
+  margin-bottom:14px;box-shadow:var(--shadow-lg);position:relative;overflow:hidden;
+}
+header::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 85% 50%,rgba(201,168,76,.18) 0%,transparent 55%),
+    radial-gradient(ellipse at 5% 100%,rgba(44,62,140,.5) 0%,transparent 50%);
+  pointer-events:none;
+}
+.hrow{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;position:relative}
+.htitles h1{font-family:var(--font-serif);font-size:26px;font-weight:800;line-height:1.1}
+.htitles h1 em{font-style:normal;color:var(--gold)}
+.hsub{font-size:11px;opacity:.5;margin-top:5px;letter-spacing:1px;text-transform:uppercase}
+.badge{background:rgba(201,168,76,.18);border:1px solid rgba(201,168,76,.4);color:var(--gold2);border-radius:20px;padding:6px 16px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase}
+/* SYNC BAR */
+.syncbar{display:flex;align-items:center;gap:10px;background:var(--surface);border-radius:var(--r-sm);padding:11px 16px;margin-bottom:14px;box-shadow:var(--shadow);flex-wrap:wrap;border:1px solid var(--border)}
+.sdot{width:9px;height:9px;border-radius:50%;flex-shrink:0;transition:background .4s}
+.sdot.idle{background:#c5c7d4}.sdot.ok{background:#2a9d5c}.sdot.saving{background:var(--gold);animation:bl .6s infinite}.sdot.err{background:var(--red)}.sdot.load{background:var(--blue2);animation:bl .6s infinite}
+@keyframes bl{0%,100%{opacity:1}50%{opacity:.15}}
+#stxt{font-size:12px;color:var(--ink2);flex:1;font-weight:500}
+#stime{font-size:10px;color:var(--ink3)}
+.sbtn{padding:7px 16px;background:var(--blue);color:white;border:none;border-radius:var(--r-sm);cursor:pointer;font-size:12px;font-weight:600;font-family:var(--font-sans);transition:var(--t)}
+.sbtn:hover{background:var(--blue2)}.sbtn:active{transform:scale(.95)}.sbtn:disabled{background:var(--border);color:var(--ink3);cursor:not-allowed}
+/* TABS */
+.tabs{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.tbtn{padding:10px 20px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r-sm);cursor:pointer;font-size:13px;font-weight:600;font-family:var(--font-sans);transition:var(--t);white-space:nowrap;color:var(--ink2)}
+.tbtn:hover:not(.on){border-color:var(--blue2);color:var(--blue)}
+.tbtn.on{background:var(--ink);color:white;border-color:var(--ink);box-shadow:var(--shadow-md)}
+.tbtn.cfg{background:var(--gold-bg);border-color:var(--gold);color:var(--ink2)}
+.tbtn.cfg.on{background:var(--gold);color:var(--ink);border-color:var(--gold)}
+.tpanel{display:none;background:var(--surface);padding:22px;border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--border)}
+.tpanel.on{display:block;animation:fup .18s ease}
+@keyframes fup{from{opacity:.4;transform:translateY(5px)}to{opacity:1;transform:none}}
+.thdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:14px;border-bottom:2px solid var(--gold-bg)}
+.ttitle{font-family:var(--font-serif);font-size:20px;font-weight:700}
+.tinfo{font-size:12px;color:var(--ink3);margin-top:4px}
+.tcount{font-size:11px;background:var(--blue-light);color:var(--blue);padding:4px 12px;border-radius:20px;font-weight:600}
+/* DISCIPLINA */
+.dsec{margin-bottom:16px;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.dsec-hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;gap:12px;background:linear-gradient(90deg,var(--ink) 0%,#2c3e8c 100%);cursor:pointer;user-select:none;flex-wrap:wrap}
+.dtitle{font-family:var(--font-serif);font-weight:700;font-size:14px;color:white;flex:1}
+.dchevron{color:rgba(255,255,255,.5);font-size:13px;transition:transform .2s;flex-shrink:0}
+.dsec.open .dchevron{transform:rotate(180deg)}
+.dsec-body{display:none}.dsec.open .dsec-body{display:block}
+.dprof-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 16px;background:rgba(44,62,140,.04);border-bottom:1px solid var(--border)}
+.dprof-label{font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.8px;white-space:nowrap}
+.dprof-input{flex:1;min-width:160px;max-width:280px;padding:6px 10px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:12px;font-family:var(--font-sans);color:var(--ink);background:white;transition:var(--t)}
+.dprof-input:focus{outline:none;border-color:var(--blue2);box-shadow:0 0 0 3px rgba(74,93,181,.1)}
+.agrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;padding:12px 16px;border-bottom:1px solid var(--border)}
+.acard{background:white;border:1px solid var(--border);border-radius:var(--r-sm);padding:8px;transition:var(--t)}
+.acard:hover{border-color:var(--blue2);box-shadow:0 2px 8px rgba(44,62,140,.1)}
+.albl{font-size:10px;font-weight:700;color:var(--blue);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
+.ainput{width:100%;padding:5px 7px;border:1px solid var(--border);border-radius:5px;font-size:11px;font-family:var(--font-sans);background:#f8f9fe;transition:var(--t)}
+.ainput:focus{outline:none;border-color:var(--blue2);background:white}
+.ainput+.ainput{margin-top:4px}
+/* TABELA */
+.twrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{background:var(--ink);color:rgba(255,255,255,.8);padding:10px 8px;font-weight:600;white-space:nowrap;text-align:left;font-size:11px;letter-spacing:.3px}
+th.c{text-align:center}
+td{padding:8px 8px;border-bottom:1px solid #f0f1f8;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--blue-light)}
+.aname{min-width:130px;font-weight:600}.pc{text-align:center;width:40px}
+.cb{width:17px;height:17px;cursor:pointer;accent-color:var(--blue2)}
+.nc{background:var(--blue-light);color:var(--blue);font-weight:700;text-align:center}
+.tc{text-align:center;font-weight:600}.tc.p{background:var(--green-light);color:var(--green)}.tc.f{background:var(--red-light);color:var(--red)}
+.ni{width:56px;padding:5px 6px;border:1.5px solid var(--border);border-radius:var(--r-sm);text-align:center;font-size:12px;font-family:var(--font-sans);background:white;transition:var(--t)}
+.ni:focus{outline:none;border-color:var(--blue2);box-shadow:0 0 0 3px rgba(74,93,181,.1)}
+.ename{display:inline-block;padding:3px 8px;border:1.5px dashed var(--border);border-radius:5px;cursor:pointer;transition:var(--t)}
+.ename:hover{background:var(--blue-light);border-color:var(--blue2);color:var(--blue)}
+/* RESUMO */
+.resumo{background:linear-gradient(135deg,var(--ink) 0%,var(--blue) 100%);padding:20px;border-radius:var(--radius);margin-top:20px;box-shadow:var(--shadow-md)}
+.rtitle{font-family:var(--font-serif);font-size:16px;color:white;margin-bottom:14px;display:flex;align-items:center;gap:10px}
+.rtitle::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.15)}
+.resumo table th{background:rgba(255,255,255,.1);color:rgba(255,255,255,.65);font-size:10px}
+.resumo table td{border-bottom:1px solid rgba(255,255,255,.06);color:white}
+.resumo tbody tr:hover td{background:rgba(255,255,255,.06)}
+.resumo .nc{background:rgba(201,168,76,.25);color:var(--gold2)}
+.resumo .tc.p{background:rgba(26,102,68,.35);color:#7ee8b0}.resumo .tc.f{background:rgba(155,35,53,.35);color:#ffb3be}
+.pct-hi{background:rgba(42,157,92,.3)!important;color:#5ef0a4!important}.pct-md{background:rgba(201,168,76,.3)!important;color:var(--gold2)!important}.pct-lo{background:rgba(155,35,53,.3)!important;color:#ff8fa0!important}
+/* EXPORT */
+.exprow{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+.ebtn{padding:10px 20px;border:none;border-radius:var(--r-sm);cursor:pointer;font-weight:600;font-size:13px;font-family:var(--font-sans);transition:var(--t);display:inline-flex;align-items:center;gap:6px}
+.ebtn.pri{background:var(--ink);color:white}.ebtn.pri:hover{background:var(--blue)}
+.ebtn.suc{background:var(--green);color:white}.ebtn.suc:hover{background:#22845a}
+.ebtn.gld{background:var(--gold);color:var(--ink)}.ebtn.gld:hover{background:var(--gold2)}
+.ebtn.gdrive{background:#4285f4;color:white}.ebtn.gdrive:hover{background:#3367d6}
+.ebtn.danger{background:var(--red);color:white}.ebtn.danger:hover{background:#7a1c2a}
+.ebtn:active{transform:scale(.95)}
+.global-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:18px;padding:20px;background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);box-shadow:var(--shadow)}
+/* MODAL */
+.modal-ov{display:none;position:fixed;inset:0;background:rgba(15,15,40,.65);z-index:8000;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px)}
+.modal-ov.show{display:flex}
+.modal{background:white;border-radius:var(--radius);padding:28px;max-width:460px;width:100%;box-shadow:var(--shadow-lg);animation:min .18s ease}
+@keyframes min{from{transform:scale(.93);opacity:0}to{transform:scale(1);opacity:1}}
+.modal h3{font-family:var(--font-serif);font-size:20px;margin-bottom:10px}
+.modal p{font-size:13px;color:var(--ink2);line-height:1.65;margin-bottom:18px}
+.modal-btns{display:flex;gap:10px;justify-content:flex-end}
+.btn-c{padding:9px 18px;border:1.5px solid var(--border);border-radius:var(--r-sm);cursor:pointer;background:white;font-family:var(--font-sans);font-size:13px;color:var(--ink2);transition:var(--t)}
+.btn-c:hover{border-color:var(--ink2)}
+.btn-ok{padding:9px 18px;background:var(--blue);color:white;border:none;border-radius:var(--r-sm);cursor:pointer;font-weight:600;font-family:var(--font-sans);font-size:13px;transition:var(--t)}
+.btn-ok:hover{background:var(--blue2)}
+/* ── CONFIGURAÇÕES ── */
+.cfg-section{margin-bottom:28px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.cfg-section-hdr{padding:14px 20px;background:linear-gradient(90deg,var(--ink),var(--blue));color:white;font-family:var(--font-serif);font-size:15px;font-weight:700}
+.cfg-body{padding:20px}
+.cfg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.cfg-card{background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r-sm);padding:16px;transition:var(--t)}
+.cfg-card:hover{border-color:var(--blue2);box-shadow:0 2px 12px rgba(44,62,140,.1)}
+.cfg-card-title{font-weight:700;font-size:13px;color:var(--ink);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.cfg-row{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
+.cfg-row:last-child{margin-bottom:0}
+.cfg-label{font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.8px}
+.cfg-input{width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:13px;font-family:var(--font-sans);color:var(--ink);background:white;transition:var(--t)}
+.cfg-input:focus{outline:none;border-color:var(--blue2);box-shadow:0 0 0 3px rgba(74,93,181,.1)}
+.cfg-input-sm{width:80px;padding:8px 10px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:13px;font-family:var(--font-sans);text-align:center;background:white;transition:var(--t)}
+.cfg-input-sm:focus{outline:none;border-color:var(--blue2);box-shadow:0 0 0 3px rgba(74,93,181,.1)}
+.cfg-save-btn{margin-top:16px;padding:10px 24px;background:var(--green);color:white;border:none;border-radius:var(--r-sm);cursor:pointer;font-weight:700;font-size:13px;font-family:var(--font-sans);transition:var(--t);display:flex;align-items:center;gap:8px}
+.cfg-save-btn:hover{background:#22845a}.cfg-save-btn:active{transform:scale(.97)}
+.cfg-info{font-size:11px;color:var(--ink3);margin-top:6px;line-height:1.5}
+.disc-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+.disc-row:last-child{border-bottom:none}
+.disc-num{font-size:11px;font-weight:700;color:var(--ink3);width:20px;flex-shrink:0}
+.disc-name-inp{flex:2;padding:6px 10px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:12px;font-family:var(--font-sans);background:white;transition:var(--t)}
+.disc-prof-inp{flex:1.5;padding:6px 10px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:12px;font-family:var(--font-sans);background:white;transition:var(--t);min-width:0}
+.disc-name-inp:focus,.disc-prof-inp:focus{outline:none;border-color:var(--blue2)}
+/* GOOGLE DRIVE STATUS */
+.gd-status{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--bg);margin-bottom:14px}
+.gd-icon{font-size:22px;flex-shrink:0}
+.gd-info{flex:1}
+.gd-name{font-size:13px;font-weight:600;color:var(--ink)}
+.gd-email{font-size:11px;color:var(--ink3)}
+.gd-connected{border-color:#34a853;background:#f0faf2}
+.gd-connected .gd-name{color:#1a6644}
+/* FOOTER */
+footer{margin-top:40px;padding:18px 0;border-top:1px solid var(--border);text-align:center;color:var(--ink3);font-size:11px;line-height:2.2}
+footer strong{color:var(--ink2)}
+@media(max-width:600px){
+  .app{padding:12px 10px}header{padding:16px}.htitles h1{font-size:20px}.tpanel{padding:14px}
+  .global-actions{flex-direction:column}.global-actions .ebtn{width:100%;justify-content:center}
+  .cfg-grid{grid-template-columns:1fr}
+}
+</style>
+<script src="https://accounts.google.com/gsi/client" async defer onload="gdOnLoad()"></script>
+</head>
+<body>
+<div id="tst"></div>
+
+<!-- MODAL IMPORTAÇÃO -->
+<div class="modal-ov" id="importModal">
+  <div class="modal">
+    <h3>⚠️ Confirmar Importação</h3>
+    <p>Isto irá substituir <strong>todos os dados actuais</strong> pelos dados do ficheiro. Esta acção não pode ser revertida.<br><br>Deseja continuar?</p>
+    <div class="modal-btns">
+      <button class="btn-c" onclick="fecharModal()">Cancelar</button>
+      <button class="btn-ok" onclick="confirmarImportacao()">Sim, importar</button>
+    </div>
+  </div>
+</div>
+
+<div class="app">
+  <header>
+    <div class="hrow">
+      <div class="htitles">
+        <h1>📚 Gestor de <em>Turmas</em></h1>
+        <div class="hsub">Academia da Palavra · Presenças &amp; Notas · CCIC</div>
+      </div>
+      <div class="badge">CCIC</div>
+    </div>
+  </header>
+
+  <div class="syncbar">
+    <div class="sdot idle" id="sdot"></div>
+    <span id="stxt">A inicializar…</span>
+    <span id="stime"></span>
+    <button class="sbtn" id="sbtn" onclick="syncNow()">🔄 Sincronizar</button>
+  </div>
+
+  <div class="tabs">
+    <button class="tbtn on" onclick="showTab('tA',this)">📗 Turma A</button>
+    <button class="tbtn"    onclick="showTab('tB',this)">📘 Turma B</button>
+    <button class="tbtn"    onclick="showTab('tP',this)">📙 Presencial</button>
+    <button class="tbtn"    onclick="showTab('tR',this)">📒 Cooperadores</button>
+    <button class="tbtn cfg" onclick="showTab('tCFG',this)">⚙️ Configurações</button>
+  </div>
+
+  <!-- TURMA A -->
+  <div id="tA" class="tpanel on">
+    <div class="thdr">
+      <div><div class="ttitle" id="title-tA">Turma A — Virtual</div><div class="tinfo" id="info-tA">Segundas e Sextas · 18:30–20:00</div></div>
+      <div class="tcount" id="cnt-tA"></div>
+    </div>
+    <div id="tA-c"></div>
+    <div class="exprow"><button class="ebtn pri" onclick="exportCSV('tA')">📥 Exportar CSV</button></div>
+  </div>
+
+  <!-- TURMA B -->
+  <div id="tB" class="tpanel">
+    <div class="thdr">
+      <div><div class="ttitle" id="title-tB">Turma B — Virtual</div><div class="tinfo" id="info-tB">Segundas e Sextas · 18:30–20:00</div></div>
+      <div class="tcount" id="cnt-tB"></div>
+    </div>
+    <div id="tB-c"></div>
+    <div class="exprow"><button class="ebtn pri" onclick="exportCSV('tB')">📥 Exportar CSV</button></div>
+  </div>
+
+  <!-- TURMA PRESENCIAL -->
+  <div id="tP" class="tpanel">
+    <div class="thdr">
+      <div><div class="ttitle" id="title-tP">Turma Presencial</div><div class="tinfo" id="info-tP">Sábados · 09:00–11:00</div></div>
+      <div class="tcount" id="cnt-tP"></div>
+    </div>
+    <div id="tP-c"></div>
+    <div class="exprow"><button class="ebtn pri" onclick="exportCSV('tP')">📥 Exportar CSV</button></div>
+  </div>
+
+  <!-- TURMA COOPERADORES -->
+  <div id="tR" class="tpanel">
+    <div class="thdr">
+      <div><div class="ttitle" id="title-tR">Turma dos Cooperadores</div><div class="tinfo" id="info-tR">Domingos · 08:00–09:00</div></div>
+      <div class="tcount" id="cnt-tR"></div>
+    </div>
+    <div id="tR-c"></div>
+    <div class="exprow"><button class="ebtn pri" onclick="exportCSV('tR')">📥 Exportar CSV</button></div>
+  </div>
+
+  <!-- ── CONFIGURAÇÕES ─────────────────────────────────────────── -->
+  <div id="tCFG" class="tpanel">
+    <div class="thdr">
+      <div><div class="ttitle">⚙️ Configurações</div><div class="tinfo">Edite turmas, disciplinas e sincronização</div></div>
+    </div>
+
+    <!-- Google Drive -->
+    <div class="cfg-section">
+      <div class="cfg-section-hdr">☁️ Sincronização — Google Drive</div>
+      <div class="cfg-body">
+        <div class="gd-status" id="gd-status">
+          <div class="gd-icon">📁</div>
+          <div class="gd-info">
+            <div class="gd-name" id="gd-name">Não ligado</div>
+            <div class="gd-email" id="gd-email">Clique em "Ligar ao Google Drive" para activar a sincronização automática</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="ebtn gdrive" id="gd-login-btn" onclick="gdLogin()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+            Ligar ao Google Drive
+          </button>
+          <button class="ebtn danger" id="gd-logout-btn" onclick="gdLogout()" style="display:none">🔌 Desligar</button>
+        </div>
+        <p class="cfg-info">Os dados ficam guardados num ficheiro <strong>AcademiaP_dados.json</strong> na sua Google Drive. Completamente gratuito, sem limites de tempo, e só o Almerindo tem acesso.</p>
+      </div>
+    </div>
+
+    <!-- Turmas -->
+    <div class="cfg-section">
+      <div class="cfg-section-hdr">📋 Informações das Turmas</div>
+      <div class="cfg-body">
+        <div class="cfg-grid" id="cfg-turmas-grid"></div>
+        <button class="cfg-save-btn" onclick="saveCfgTurmas()">✅ Guardar Alterações das Turmas</button>
+      </div>
+    </div>
+
+    <!-- Disciplinas -->
+    <div class="cfg-section">
+      <div class="cfg-section-hdr">📚 Disciplinas e Professores Predefinidos</div>
+      <div class="cfg-body">
+        <p style="font-size:12px;color:var(--ink3);margin-bottom:14px">Estes são os nomes e professores que aparecem por omissão quando uma disciplina é criada. Pode sempre alterar o professor dentro de cada turma.</p>
+        <div style="display:grid;grid-template-columns:30px 1fr 1fr;gap:6px;margin-bottom:8px;padding:0 4px">
+          <span style="font-size:10px;font-weight:700;color:var(--ink3)">#</span>
+          <span style="font-size:10px;font-weight:700;color:var(--ink3)">DISCIPLINA</span>
+          <span style="font-size:10px;font-weight:700;color:var(--ink3)">PROFESSOR PREDEFINIDO</span>
+        </div>
+        <div id="cfg-discs-list"></div>
+        <button class="cfg-save-btn" onclick="saveCfgDiscs()">✅ Guardar Disciplinas</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="global-actions">
+    <button class="ebtn suc" onclick="exportAll()">📊 Exportar TODAS as Turmas (CSV)</button>
+    <button class="ebtn gld" onclick="exportJSON()">💾 Guardar Backup (JSON)</button>
+    <button class="ebtn pri" onclick="document.getElementById('impFile').click()">📂 Importar Backup (JSON)</button>
+    <input type="file" id="impFile" accept=".json" style="display:none" onchange="importJSON(this)">
+  </div>
+
+  <footer>
+    <div>📚 <strong>Gestor de Turmas</strong> — Academia da Palavra · CCIC</div>
+    <div>Sincronização automática · Google Drive · Backup local</div>
+    <div>Desenvolvido por <strong>Almerindo Assunção</strong> · © 2026</div>
+  </footer>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════════════════
+//  DEFINIÇÃO — valores iniciais (editáveis nas Configurações)
+// ════════════════════════════════════════════════════════════════════
+const DEF_TURMAS = {
+  tA:{ nome:'Turma A',               horario:'Segundas e Sextas · 18:30–20:00', n:32, aulas:5, info:['Aula 1','Aula 2','Aula 3','Prova','Correção'] },
+  tB:{ nome:'Turma B',               horario:'Segundas e Sextas · 18:30–20:00', n:32, aulas:5, info:['Aula 1','Aula 2','Aula 3','Prova','Correção'] },
+  tP:{ nome:'Turma Presencial',      horario:'Sábados · 09:00–11:00',           n:32, aulas:3, info:['Sábado 1','Sábado 2','Sábado 3'] },
+  tR:{ nome:'Turma dos Cooperadores',horario:'Domingos · 08:00–09:00',          n:32, aulas:2, info:['Domingo 1','Domingo 2'] }
+};
+
+const DEF_DISCS = [
+  {id:1,  nome:'1. A Bíblia',                        profDef:'Sandro Van-Dúnem'},
+  {id:2,  nome:'2. Deus',                            profDef:'Prof: —'},
+  {id:3,  nome:'3. O Homem e Satanás',               profDef:'Ismael Costa'},
+  {id:4,  nome:'4. Cruz',                            profDef:'Sandro Van-Dúnem'},
+  {id:5,  nome:'5. O Sangue de Jesus',               profDef:'Osvaldo Betatela'},
+  {id:6,  nome:'6. Ressurreição',                    profDef:'Paulo Domingos'},
+  {id:7,  nome:'7. Arrependimento',                  profDef:'Almerindo'},
+  {id:8,  nome:'8. Fé',                              profDef:'Emilson António'},
+  {id:9,  nome:'9. Baptismo',                        profDef:'Prof: —'},
+  {id:10, nome:'10. Generosidade',                   profDef:'Prof: —'},
+  {id:11, nome:'11. O Espírito Santo',               profDef:'Marcelino Canda'},
+  {id:12, nome:'12. Comunhão e Adoração',            profDef:'Lisandro Alegria'},
+  {id:13, nome:'13. Vida Vitoriosa em Cristo Jesus', profDef:'Celma Reis'},
+];
+
+// ════════════════════════════════════════════════════════════════════
+//  ESTADO
+// ════════════════════════════════════════════════════════════════════
+let turmas = {}, dados = {}, aulasData = {};
+let DISCS = DEF_DISCS.map(d=>({...d}));  // cópia mutável
+let saveTimer = null, isSaving = false, lastTS = null, pendingImport = null;
+const renderedDiscs = {};
+
+// ════════════════════════════════════════════════════════════════════
+//  LOCAL STORAGE
+// ════════════════════════════════════════════════════════════════════
+const LS = 'ccic_ap_v4';
+const lsave = p => { try{localStorage.setItem(LS,JSON.stringify(p))}catch(e){} };
+const lload = () => { try{const r=localStorage.getItem(LS);return r?JSON.parse(r):null}catch(e){return null} };
+
+// ════════════════════════════════════════════════════════════════════
+//  GOOGLE DRIVE SYNC
+//  Usa a Google Identity Services (GIS) + Drive REST API v3
+//  Ficheiro: AcademiaP_dados.json na raiz do Drive
+//  Client ID: público, só pode ler/escrever ficheiros criados pela própria app (scope drive.file)
+// ════════════════════════════════════════════════════════════════════
+const GD = {
+  clientId: '700413946587-j1e6so1o16vr84cd7b6kipa6jdhh3l9m.apps.googleusercontent.com', // placeholder — ver nota
+  scope: 'https://www.googleapis.com/auth/drive.file',
+  fileName: 'AcademiaP_dados.json',
+  tokenClient: null,
+  token: null,
+  fileId: null,
+  userInfo: null,
+};
+
+// Nota: Para usar o Google Drive API precisas de criar um Client ID no Google Cloud Console.
+// Passos rápidos (5 min, grátis):
+// 1. console.cloud.google.com → Novo projecto "Academia Palavra"
+// 2. APIs & Services → Enable → Google Drive API
+// 3. Credentials → Create OAuth 2.0 Client ID → Web application
+// 4. Authorized JS origins: adicionar o URL onde a app está alojada
+// 5. Copiar o Client ID e substituir o valor acima
+
+// ── Google Identity Services carregado via tag <script> no head ──
+// Inicializa quando o script GSI carrega
+function gdInit() {
+  // Verificar se o GSI já está disponível
+  if (typeof google !== 'undefined' && google.accounts) {
+    gdSetupClient();
+  } else {
+    // Aguardar o script carregar
+    window._gdPending = true;
+  }
+}
+
+function gdSetupClient() {
+  GD.tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: GD.clientId,
+    scope: GD.scope,
+    callback: gdTokenCallback,
+    error_callback: (err) => {
+      console.warn('GD error:', err);
+      setSyncUI('err', 'Google Drive: ' + (err.message || 'erro de acesso'));
+      toast('❌ Erro ao ligar ao Google Drive','e');
+    }
+  });
+  // Tentar token guardado
+  const saved = localStorage.getItem('gd_token');
+  if (saved) {
+    try {
+      const t = JSON.parse(saved);
+      if (t.expires_at && Date.now() < t.expires_at) {
+        GD.token = t;
+        gdGetUserInfo().then(ok => { if(ok) gdSync(); else localStorage.removeItem('gd_token'); });
+      } else {
+        localStorage.removeItem('gd_token');
+      }
+    } catch(e) { localStorage.removeItem('gd_token'); }
+  }
+}
+
+// Chamada pelo onload do script GSI
+window.gdOnLoad = () => {
+  if (window._gdPending) {
+    window._gdPending = false;
+    gdSetupClient();
+  }
+};
+
+async function gdTokenCallback(resp) {
+  if (resp.error) {
+    setSyncUI('err', 'Google Drive: ' + resp.error);
+    toast('❌ ' + resp.error_description || 'Acesso negado', 'e');
+    return;
+  }
+  GD.token = {
+    access_token: resp.access_token,
+    expires_at: Date.now() + ((resp.expires_in || 3600) - 60) * 1000,
+  };
+  localStorage.setItem('gd_token', JSON.stringify(GD.token));
+  const ok = await gdGetUserInfo();
+  if (ok) {
+    toast('✅ Google Drive ligado!', 'ok');
+    await gdSync();
+  }
+}
+
+async function gdGetUserInfo() {
+  try {
+    const r = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: 'Bearer ' + GD.token.access_token }
+    });
+    if (!r.ok) { GD.token = null; updateGdUI(false); return false; }
+    GD.userInfo = await r.json();
+    updateGdUI(true);
+    return true;
+  } catch(e) { return false; }
+}
+
+function updateGdUI(connected) {
+  const status = document.getElementById('gd-status');
+  const name   = document.getElementById('gd-name');
+  const email  = document.getElementById('gd-email');
+  const loginBtn  = document.getElementById('gd-login-btn');
+  const logoutBtn = document.getElementById('gd-logout-btn');
+  if (connected && GD.userInfo) {
+    status.classList.add('gd-connected');
+    name.textContent  = '✅ Ligado — ' + (GD.userInfo.name || 'Google Drive');
+    email.textContent = GD.userInfo.email || '';
+    loginBtn.style.display  = 'none';
+    logoutBtn.style.display = '';
+  } else {
+    status.classList.remove('gd-connected');
+    name.textContent  = 'Não ligado';
+    email.textContent = 'Clique em "Ligar ao Google Drive" para activar a sincronização automática';
+    loginBtn.style.display  = '';
+    logoutBtn.style.display = 'none';
+  }
+}
+
+window.gdLogin = () => {
+  if (!GD.tokenClient) {
+    toast('⏳ Google a carregar, tenta novamente…','w');
+    return;
+  }
+  try {
+    GD.tokenClient.requestAccessToken({ prompt: 'select_account' });
+  } catch(e) {
+    toast('❌ Erro: ' + e.message, 'e');
+  }
+};
+
+window.gdLogout = () => {
+  try { if (GD.token && typeof google !== 'undefined') google.accounts.oauth2.revoke(GD.token.access_token, ()=>{}); } catch(e){}
+  GD.token = null; GD.fileId = null; GD.userInfo = null;
+  localStorage.removeItem('gd_token');
+  updateGdUI(false);
+  setSyncUI('idle', 'Google Drive desligado — dados guardados localmente');
+  toast('🔌 Google Drive desligado','w');
+};
+
+async function gdEnsureToken() {
+  if (!GD.token) return false;
+  if (Date.now() > GD.token.expires_at) {
+    return new Promise(res => {
+      GD.tokenClient.callback = async resp => {
+        if (resp.error) { res(false); return; }
+        GD.token = { access_token: resp.access_token, expires_at: Date.now() + ((resp.expires_in||3600)-60)*1000 };
+        localStorage.setItem('gd_token', JSON.stringify(GD.token));
+        res(true);
+      };
+      GD.tokenClient.requestAccessToken({ prompt: '' });
+    });
+  }
+  return true;
+}
+
+async function gdFindFile() {
+  const r = await fetch(
+    `https://www.googleapis.com/drive/v3/files?q=name='${GD.fileName}'+and+trashed=false&fields=files(id,name)`,
+    { headers: { Authorization: 'Bearer ' + GD.token.access_token } }
+  );
+  const data = await r.json();
+  if (data.files && data.files.length > 0) {
+    GD.fileId = data.files[0].id;
+    return data.files[0].id;
+  }
+  return null;
+}
+
+async function gdRead() {
+  const ok = await gdEnsureToken(); if (!ok) return null;
+  const fid = await gdFindFile(); if (!fid) return null;
+  const r = await fetch(
+    `https://www.googleapis.com/drive/v3/files/${fid}?alt=media`,
+    { headers: { Authorization: 'Bearer ' + GD.token.access_token } }
+  );
+  if (!r.ok) return null;
+  return await r.json();
+}
+
+async function gdWrite(payload) {
+  const ok = await gdEnsureToken(); if (!ok) return false;
+  const body = JSON.stringify(payload);
+  let url, method;
+  if (GD.fileId) {
+    url    = `https://www.googleapis.com/upload/drive/v3/files/${GD.fileId}?uploadType=media`;
+    method = 'PATCH';
+  } else {
+    // Criar ficheiro
+    const meta = await fetch('https://www.googleapis.com/drive/v3/files', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + GD.token.access_token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: GD.fileName, mimeType: 'application/json' })
+    });
+    const mj = await meta.json();
+    GD.fileId = mj.id;
+    url    = `https://www.googleapis.com/upload/drive/v3/files/${GD.fileId}?uploadType=media`;
+    method = 'PATCH';
+  }
+  const r = await fetch(url, {
+    method,
+    headers: { Authorization: 'Bearer ' + GD.token.access_token, 'Content-Type': 'application/json' },
+    body
+  });
+  return r.ok;
+}
+
+async function gdSync() {
+  if (!GD.token) return;
+  setSyncUI('load', 'A sincronizar com Google Drive…');
+  try {
+    const remote = await gdRead();
+    if (remote && remote.ts) {
+      const remoteDate = new Date(remote.ts);
+      const localDate  = lastTS ? new Date(lastTS) : new Date(0);
+      if (remoteDate > localDate) {
+        if (applyPayload(remote)) {
+          lsave(remote);
+          const ap = document.querySelector('.tpanel.on');
+          if (ap && ap.id !== 'tCFG') renderTurma(ap.id);
+        }
+        setSyncUI('ok', 'Sincronizado com Google Drive ✓');
+        toast('🔄 Dados actualizados do Drive','ok');
+        return;
+      }
+    }
+    // Locais são mais recentes ou Drive vazio — enviar
+    const p = buildPayload();
+    const wrote = await gdWrite(p);
+    lsave(p);
+    setSyncUI(wrote?'ok':'err', wrote ? 'Guardado no Google Drive ✓' : 'Erro ao guardar no Drive');
+  } catch(e) {
+    setSyncUI('err', 'Erro Drive — dados guardados localmente');
+    console.warn('gdSync:', e);
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════
+//  ESTRUTURA / FIX
+// ════════════════════════════════════════════════════════════════════
+function initStruct() {
+  Object.keys(DEF_TURMAS).forEach(tk => {
+    const d = DEF_TURMAS[tk];
+    if (!turmas[tk])
+      turmas[tk] = {
+        nome: d.nome, horario: d.horario,
+        alunos: Array.from({length:d.n}, (_,i)=>({id:i+1, nome:`Aluno ${i+1}`})),
+        discs:  DISCS.map(dc=>({...dc, professor:dc.profDef, aulas:d.aulas, info:d.info}))
+      };
+    // Actualizar título/info no DOM
+    const tEl = document.getElementById('title-'+tk);
+    const iEl = document.getElementById('info-'+tk);
+    if (tEl) tEl.textContent = turmas[tk].nome;
+    if (iEl) iEl.textContent = turmas[tk].horario;
+  });
+  fixDados();
+}
+
+function fixDados() {
+  Object.keys(DEF_TURMAS).forEach(tk => {
+    const t = turmas[tk]; if (!t) return;
+    if (!dados[tk])     dados[tk]     = {};
+    if (!aulasData[tk]) aulasData[tk] = {};
+    const d = DEF_TURMAS[tk];
+    t.alunos.forEach(a => {
+      if (!dados[tk][a.id]) dados[tk][a.id] = {};
+      t.discs.forEach(disc => {
+        const ex = dados[tk][a.id][disc.id];
+        if (!ex || !Array.isArray(ex.aulas) || ex.aulas.length !== disc.aulas) {
+          const prev = ex && Array.isArray(ex.aulas) ? ex.aulas : [];
+          dados[tk][a.id][disc.id] = {
+            aulas: Array.from({length:disc.aulas}, (_,i) => prev[i]??0),
+            nota:  ex ? (parseFloat(ex.nota)||0) : 0
+          };
+        }
+      });
+    });
+    t.discs.forEach(disc => {
+      const ex = aulasData[tk][disc.id];
+      if (!ex) {
+        aulasData[tk][disc.id] = {datas:Array(disc.aulas).fill(''), dias:Array(disc.aulas).fill('')};
+      } else {
+        if (!Array.isArray(ex.datas)||ex.datas.length!==disc.aulas)
+          ex.datas = Array.from({length:disc.aulas},(_,i)=>(ex.datas||[])[i]||'');
+        if (!Array.isArray(ex.dias)||ex.dias.length!==disc.aulas)
+          ex.dias  = Array.from({length:disc.aulas},(_,i)=>(ex.dias||[])[i]||'');
+      }
+    });
+  });
+}
+
+// ════════════════════════════════════════════════════════════════════
+//  PAYLOAD
+// ════════════════════════════════════════════════════════════════════
+function buildPayload() {
+  const nomes={}, profs={};
+  Object.keys(turmas).forEach(tk=>{
+    nomes[tk]=turmas[tk].alunos.map(a=>({id:a.id,nome:a.nome}));
+    profs[tk]=turmas[tk].discs.map(d=>({id:d.id,professor:d.professor}));
+  });
+  return {v:4, ts:new Date().toISOString(), dados, aulasData, nomes, profs};
+}
+
+function applyPayload(p) {
+  if (!p||!p.v) return false;
+  if (p.dados)     dados     = p.dados;
+  if (p.aulasData) aulasData = p.aulasData;
+  if (p.nomes) Object.keys(p.nomes).forEach(tk=>{
+    if(!turmas[tk])return;
+    p.nomes[tk].forEach(n=>{ const a=turmas[tk].alunos.find(a=>a.id===n.id); if(a&&n.nome) a.nome=n.nome; });
+  });
+  if (p.profs) Object.keys(p.profs).forEach(tk=>{
+    if(!turmas[tk])return;
+    p.profs[tk].forEach(pd=>{ const d=turmas[tk].discs.find(d=>d.id===pd.id); if(d&&pd.professor) d.professor=pd.professor; });
+  });
+  fixDados();
+  if (p.ts) lastTS=p.ts;
+  return true;
+}
+
+// ════════════════════════════════════════════════════════════════════
+//  GUARDAR — debounce 600ms
+// ════════════════════════════════════════════════════════════════════
+function schedSave() {
+  clearTimeout(saveTimer);
+  setSyncUI('saving','A guardar…');
+  saveTimer = setTimeout(doSave, 600);
+}
+
+async function doSave() {
+  if (isSaving) { schedSave(); return; }
+  isSaving = true;
+  const btn = document.getElementById('sbtn');
+  btn.disabled = true;
+  try {
+    const p = buildPayload();
+    lsave(p);
+    lastTS = p.ts;
+    if (GD.token) {
+      const ok = await gdWrite(p);
+      setSyncUI(ok?'ok':'err', ok ? 'Guardado no Drive ✓' : 'Sem internet — guardado localmente');
+    } else {
+      setSyncUI('ok', 'Guardado localmente ✓');
+    }
+  } catch(e) {
+    setSyncUI('err','Erro ao guardar');
+  } finally {
+    btn.disabled = false;
+    isSaving = false;
+  }
+}
+
+window.syncNow = async () => {
+  clearTimeout(saveTimer);
+  if (GD.token) { await gdSync(); toast('✅ Sincronizado com Google Drive','ok'); }
+  else { await doSave(); toast('💾 Guardado localmente','ok'); }
+};
+
+// ════════════════════════════════════════════════════════════════════
+//  UI
+// ════════════════════════════════════════════════════════════════════
+function setSyncUI(state, txt) {
+  document.getElementById('sdot').className = 'sdot ' + state;
+  document.getElementById('stxt').textContent = txt;
+  if (lastTS) document.getElementById('stime').textContent =
+    new Date(lastTS).toLocaleString('pt-PT',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+}
+
+let ttimer;
+window.toast = (msg, tipo) => {
+  const el = document.getElementById('tst');
+  el.textContent = msg; el.className = 's '+(tipo||'');
+  clearTimeout(ttimer); ttimer = setTimeout(()=>el.className='', 3500);
+};
+
+window.showTab = (name, btn) => {
+  document.querySelectorAll('.tpanel').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('on'));
+  document.getElementById(name).classList.add('on');
+  if (btn) btn.classList.add('on');
+  if (name === 'tCFG') renderCfg();
+  else renderTurma(name);
+};
+
+window.toggleDisc = (tk, did) => {
+  const sec = document.getElementById(`dsec-${tk}-${did}`);
+  if (!sec) return;
+  const wasOpen = sec.classList.contains('open');
+  sec.classList.toggle('open');
+  if (!wasOpen) {
+    const key = tk+'-'+did;
+    if (!renderedDiscs[key]) {
+      renderedDiscs[key] = true;
+      const t = turmas[tk];
+      const disc = t.discs.find(d=>d.id===did);
+      if (disc) { const body = document.getElementById(`dsec-body-${tk}-${did}`); if (body) body.innerHTML = buildDiscBody(tk, disc); }
+    }
+  }
+};
+
+// ════════════════════════════════════════════════════════════════════
+//  RENDERIZAÇÃO
+// ════════════════════════════════════════════════════════════════════
+const esc = s => String(s).replace(/&/g,'\u0026amp;').replace(/</g,'\u0026lt;').replace(/>/g,'\u0026gt;').replace(/"/g,'\u0026quot;');
+
+function buildDiscBody(tk, disc) {
+  const t = turmas[tk];
+  const ai = aulasData[tk][disc.id];
+  let h = `<div class="dprof-row">
+    <span class="dprof-label">👤 Professor</span>
+    <input class="dprof-input" value="${esc(disc.professor)}"
+      onchange="editProf('${tk}',${disc.id},this.value)" placeholder="Nome do professor">
+  </div><div class="agrid">`;
+  for (let i=0;i<disc.aulas;i++) {
+    h+=`<div class="acard"><div class="albl">${disc.info[i]}</div>
+      <input type="date" class="ainput" value="${ai.datas[i]||''}" onchange="editData('${tk}',${disc.id},${i},this.value)">
+      <input type="text" class="ainput" placeholder="Ex: Segunda" value="${esc(ai.dias[i]||'')}" onchange="editDia('${tk}',${disc.id},${i},this.value)">
+    </div>`;
+  }
+  h+=`</div><div class="twrap"><table><thead><tr><th>Aluno</th>`;
+  for (let i=0;i<disc.aulas;i++) {
+    h+=`<th class="c" style="font-size:10px"><div style="color:var(--gold2)">${disc.info[i]}</div>
+      <div style="opacity:.5;font-weight:400">${esc(ai.dias[i]||'')} ${ai.datas[i]||'—'}</div></th>`;
+  }
+  h+=`<th class="c">Nota</th><th class="c">✅</th><th class="c">❌</th></tr></thead><tbody>`;
+  t.alunos.forEach(a=>{
+    const d=dados[tk][a.id][disc.id];
+    const p=d.aulas.filter(x=>x===1).length;
+    const f=d.aulas.filter(x=>x===0).length;
+    h+=`<tr id="row-${tk}-${a.id}-${disc.id}">
+      <td class="aname"><span class="ename" onclick="editNome(this,'${tk}',${a.id})">${esc(a.nome)}</span></td>`;
+    for (let i=0;i<disc.aulas;i++) {
+      h+=`<td class="pc"><input type="checkbox" class="cb" ${d.aulas[i]===1?'checked':''} onchange="marcaP('${tk}',${a.id},${disc.id},${i},this.checked)"></td>`;
+    }
+    h+=`<td class="nc"><input type="number" class="ni" value="${d.nota}" min="0" max="20" step="0.5" oninput="editNota('${tk}',${a.id},${disc.id},this.value)"></td>
+      <td class="tc p cell-pres">${p}</td><td class="tc f cell-falt">${f}</td></tr>`;
+  });
+  h+=`</tbody></table></div>`;
+  return h;
+}
+
+window.renderTurma = tk => {
+  const t = turmas[tk];
+  const cont = document.getElementById(tk+'-c');
+  if (!t||!cont) return;
+  Object.keys(renderedDiscs).forEach(k=>{ if(k.startsWith(tk+'-')) delete renderedDiscs[k]; });
+  const cntEl = document.getElementById('cnt-'+tk);
+  if (cntEl) cntEl.textContent = t.alunos.length + ' alunos';
+  let h = '';
+  t.discs.forEach(disc => {
+    h+=`<div class="dsec" id="dsec-${tk}-${disc.id}">
+      <div class="dsec-hdr" onclick="toggleDisc('${tk}',${disc.id})">
+        <span class="dtitle">${esc(disc.nome)}</span>
+        <span class="dchevron">▾</span>
+      </div>
+      <div class="dsec-body" id="dsec-body-${tk}-${disc.id}"></div>
+    </div>`;
+  });
+  h += resumoHTML(tk);
+  cont.innerHTML = h;
+};
+
+function resumoHTML(tk) {
+  const t = turmas[tk];
+  let rows = '';
+  t.alunos.forEach(a => {
+    let m=0,p=0,f=0;
+    t.discs.forEach(d=>{ const dd=dados[tk][a.id][d.id]; m+=dd.nota; p+=dd.aulas.filter(x=>x===1).length; f+=dd.aulas.filter(x=>x===0).length; });
+    const tot=p+f; const pct=tot>0?(p/tot*100).toFixed(1):'0.0';
+    const cls=parseFloat(pct)>=80?'pct-hi':parseFloat(pct)>=60?'pct-md':'pct-lo';
+    rows+=`<tr><td class="aname">${esc(a.nome)}</td><td class="nc">${(m/t.discs.length).toFixed(2)}</td>
+      <td class="tc p">${p}</td><td class="tc f">${f}</td><td class="tc ${cls}">${pct}%</td></tr>`;
+  });
+  return `<div class="resumo resumo-block"><div class="rtitle">📊 Resumo por Aluno</div>
+    <div class="twrap"><table><thead><tr>
+      <th>Aluno</th><th class="c">Média (${t.discs.length} disc.)</th>
+      <th class="c">Presenças</th><th class="c">Faltas</th><th class="c">Assiduidade</th>
+    </tr></thead><tbody>${rows}</tbody></table></div></div>`;
+}
+
+window.updateResumo = tk => {
+  const c=document.getElementById(tk+'-c'); if(!c) return;
+  const rb=c.querySelector('.resumo-block'); if(!rb) return;
+  const tbody=rb.querySelector('tbody'); if(!tbody) return;
+  const t=turmas[tk]; let rows='';
+  t.alunos.forEach(a=>{
+    let m=0,p=0,f=0;
+    t.discs.forEach(d=>{ const dd=dados[tk][a.id][d.id]; m+=dd.nota; p+=dd.aulas.filter(x=>x===1).length; f+=dd.aulas.filter(x=>x===0).length; });
+    const tot=p+f; const pct=tot>0?(p/tot*100).toFixed(1):'0.0';
+    const cls=parseFloat(pct)>=80?'pct-hi':parseFloat(pct)>=60?'pct-md':'pct-lo';
+    rows+=`<tr><td class="aname">${esc(a.nome)}</td><td class="nc">${(m/t.discs.length).toFixed(2)}</td>
+      <td class="tc p">${p}</td><td class="tc f">${f}</td><td class="tc ${cls}">${pct}%</td></tr>`;
+  });
+  tbody.innerHTML=rows;
+};
+
+// ════════════════════════════════════════════════════════════════════
+//  CONFIGURAÇÕES — render
+// ════════════════════════════════════════════════════════════════════
+function renderCfg() {
+  // Turmas
+  const tg = document.getElementById('cfg-turmas-grid');
+  tg.innerHTML = Object.keys(DEF_TURMAS).map(tk => {
+    const t = turmas[tk];
+    return `<div class="cfg-card">
+      <div class="cfg-card-title">${tk === 'tA'?'📗':tk==='tB'?'📘':tk==='tP'?'📙':'📒'} ${t.nome}</div>
+      <div class="cfg-row">
+        <label class="cfg-label">Nome da Turma</label>
+        <input class="cfg-input" id="cfg-nome-${tk}" value="${esc(t.nome)}" placeholder="Nome da turma">
+      </div>
+      <div class="cfg-row">
+        <label class="cfg-label">Horário</label>
+        <input class="cfg-input" id="cfg-horario-${tk}" value="${esc(t.horario)}" placeholder="Ex: Segundas · 18:30">
+      </div>
+      <div class="cfg-row">
+        <label class="cfg-label">Número de alunos</label>
+        <input class="cfg-input-sm" id="cfg-nalunos-${tk}" type="number" min="1" max="100" value="${t.alunos.length}">
+      </div>
+    </div>`;
+  }).join('');
+
+  // Disciplinas
+  const dl = document.getElementById('cfg-discs-list');
+  dl.innerHTML = DISCS.map(d => `
+    <div class="disc-row">
+      <span class="disc-num">${d.id}</span>
+      <input class="disc-name-inp" id="cfg-dname-${d.id}" value="${esc(d.nome)}" placeholder="Nome da disciplina">
+      <input class="disc-prof-inp" id="cfg-dprof-${d.id}" value="${esc(d.profDef)}" placeholder="Professor">
+    </div>`).join('');
+}
+
+window.saveCfgTurmas = () => {
+  Object.keys(DEF_TURMAS).forEach(tk => {
+    const nome    = document.getElementById('cfg-nome-'+tk)?.value.trim();
+    const horario = document.getElementById('cfg-horario-'+tk)?.value.trim();
+    const nAl     = parseInt(document.getElementById('cfg-nalunos-'+tk)?.value) || turmas[tk].alunos.length;
+
+    if (nome)    { turmas[tk].nome = nome;    DEF_TURMAS[tk].nome = nome; }
+    if (horario) { turmas[tk].horario = horario; DEF_TURMAS[tk].horario = horario; }
+
+    // Ajustar número de alunos se mudou
+    const cur = turmas[tk].alunos.length;
+    if (nAl > cur) {
+      for (let i=cur+1; i<=nAl; i++) turmas[tk].alunos.push({id:i, nome:`Aluno ${i}`});
+    } else if (nAl < cur) {
+      turmas[tk].alunos = turmas[tk].alunos.slice(0, nAl);
+    }
+    DEF_TURMAS[tk].n = nAl;
+
+    // Actualizar títulos no DOM
+    const tEl = document.getElementById('title-'+tk);
+    const iEl = document.getElementById('info-'+tk);
+    if (tEl) tEl.textContent = turmas[tk].nome;
+    if (iEl) iEl.textContent = turmas[tk].horario;
+  });
+  fixDados();
+  schedSave();
+  toast('✅ Turmas actualizadas!','ok');
+};
+
+window.saveCfgDiscs = () => {
+  DISCS.forEach(d => {
+    const nome  = document.getElementById('cfg-dname-'+d.id)?.value.trim();
+    const prof  = document.getElementById('cfg-dprof-'+d.id)?.value.trim();
+    if (nome) d.nome    = nome;
+    if (prof) d.profDef = prof;
+    // Actualizar nas turmas activas
+    Object.keys(turmas).forEach(tk => {
+      const td = turmas[tk].discs.find(x=>x.id===d.id);
+      if (td) { if(nome) td.nome=nome; }
+    });
+  });
+  // Limpar cache de renders
+  Object.keys(renderedDiscs).forEach(k=>delete renderedDiscs[k]);
+  schedSave();
+  toast('✅ Disciplinas actualizadas!','ok');
+};
+
+// ════════════════════════════════════════════════════════════════════
+//  ACÇÕES
+// ════════════════════════════════════════════════════════════════════
+window.marcaP = (tk,aid,did,i,v) => {
+  dados[tk][aid][did].aulas[i] = v?1:0;
+  const row=document.getElementById(`row-${tk}-${aid}-${did}`);
+  if (row) {
+    const aulas=dados[tk][aid][did].aulas;
+    row.querySelector('.cell-pres').textContent=aulas.filter(x=>x===1).length;
+    row.querySelector('.cell-falt').textContent=aulas.filter(x=>x===0).length;
+  }
+  updateResumo(tk); schedSave();
+};
+
+window.editNota = (tk,aid,did,v) => { dados[tk][aid][did].nota=parseFloat(v)||0; updateResumo(tk); schedSave(); };
+window.editProf = (tk,did,v) => { const d=turmas[tk].discs.find(d=>d.id===did); if(d){d.professor=v;schedSave();} };
+window.editData = (tk,did,i,v) => { aulasData[tk][did].datas[i]=v; schedSave(); };
+window.editDia  = (tk,did,i,v) => { aulasData[tk][did].dias[i]=v;  schedSave(); };
+
+window.editNome = (el,tk,aid) => {
+  const a=turmas[tk].alunos.find(a=>a.id===aid);
+  if(!a||el.classList.contains('ed')) return;
+  el.classList.add('ed');
+  const prev=a.nome;
+  el.innerHTML=`<input type="text" value="${esc(prev)}" autofocus style="border:none;padding:2px 5px;font-size:inherit;font-weight:inherit;width:130px;background:white;border-radius:3px;outline:none">`;
+  const inp=el.querySelector('input');
+  inp.onblur=()=>{ a.nome=inp.value.trim()||prev; el.classList.remove('ed'); schedSave(); renderTurma(tk); };
+  inp.onkeydown=e=>{if(e.key==='Enter')inp.blur();};
+  inp.focus(); inp.select();
+};
+
+// ════════════════════════════════════════════════════════════════════
+//  EXPORTAR / IMPORTAR
+// ════════════════════════════════════════════════════════════════════
+window.exportCSV = tk => {
+  const t=turmas[tk];
+  let c=`Academia da Palavra - ${t.nome}\n${t.horario}\n\nAluno,`;
+  t.discs.forEach(d=>c+=`${d.nome} (Nota),`);
+  c+='Média Final,Presenças,Faltas,% Assiduidade\n';
+  t.alunos.forEach(a=>{
+    c+=`"${a.nome}",`;let m=0,p=0,f=0;
+    t.discs.forEach(d=>{ const dd=dados[tk][a.id][d.id]; c+=`${dd.nota},`;m+=dd.nota;p+=dd.aulas.filter(x=>x===1).length;f+=dd.aulas.filter(x=>x===0).length; });
+    const tot=p+f; c+=`${(m/t.discs.length).toFixed(2)},${p},${f},${tot>0?((p/tot)*100).toFixed(1):'0.0'}%\n`;
+  });
+  dl(c,`${tk}_${hj()}.csv`,'text/csv;charset=utf-8;');
+};
+
+window.exportAll = () => {
+  let c=`Academia da Palavra - Todas as Turmas\n${new Date().toLocaleDateString('pt-PT')}\n`;
+  Object.keys(turmas).forEach(tk=>{
+    const t=turmas[tk];
+    c+=`\n\n=== ${t.nome} (${t.horario}) ===\n\nAluno,`;
+    t.discs.forEach(d=>c+=`${d.nome} (Nota),`);
+    c+='Média Final,Presenças,Faltas,% Assiduidade\n';
+    t.alunos.forEach(a=>{
+      c+=`"${a.nome}",`;let m=0,p=0,f=0;
+      t.discs.forEach(d=>{ const dd=dados[tk][a.id][d.id]; c+=`${dd.nota},`;m+=dd.nota;p+=dd.aulas.filter(x=>x===1).length;f+=dd.aulas.filter(x=>x===0).length; });
+      const tot=p+f; c+=`${(m/t.discs.length).toFixed(2)},${p},${f},${tot>0?((p/tot)*100).toFixed(1):'0.0'}%\n`;
+    });
+  });
+  dl(c,`Todas_Turmas_${hj()}.csv`,'text/csv;charset=utf-8;');
+};
+
+window.exportJSON = () => { dl(JSON.stringify(buildPayload(),null,2),`AcademiaPalavra_backup_${hj()}.json`,'application/json'); toast('💾 Backup guardado','ok'); };
+
+window.importJSON = input => {
+  const file=input.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{ try{pendingImport=JSON.parse(e.target.result);document.getElementById('importModal').classList.add('show');}catch(err){toast('❌ Ficheiro JSON inválido','e');} };
+  reader.readAsText(file); input.value='';
+};
+
+window.confirmarImportacao = () => {
+  if(!pendingImport) return;
+  try{ applyPayload(pendingImport); lsave(pendingImport); fecharModal(); const ap=document.querySelector('.tpanel.on'); if(ap&&ap.id!=='tCFG') renderTurma(ap.id); doSave(); toast('✅ Dados importados com sucesso!','ok'); }catch(err){toast('❌ Erro: '+err.message,'e');}
+  pendingImport=null;
+};
+
+window.fecharModal = () => { document.getElementById('importModal').classList.remove('show'); pendingImport=null; };
+
+function dl(content,name,mime){ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([content],{type:mime})); a.download=name; a.style.display='none'; document.body.appendChild(a); a.click(); document.body.removeChild(a); }
+const hj=()=>new Date().toISOString().split('T')[0];
+
+// ════════════════════════════════════════════════════════════════════
+//  ARRANQUE
+// ════════════════════════════════════════════════════════════════════
+(() => {
+  initStruct();
+  const cached = lload();
+  if (cached) { applyPayload(cached); fixDados(); }
+  requestAnimationFrame(() => {
+    const ap = document.querySelector('.tpanel.on');
+    if (ap) renderTurma(ap.id);
+    setSyncUI('idle', 'Dados locais carregados');
+    gdInit();
+  });
+})();
+</script>
+</body>
+</html>
