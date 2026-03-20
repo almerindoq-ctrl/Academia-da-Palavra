@@ -31,21 +31,60 @@
   --t:all .18s cubic-bezier(.4,0,.2,1);
 }
 html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--ink)}
-/* TOAST */
+
+/* ── ECRÃ DE LOGIN ── */
+#login-screen{position:fixed;inset:0;background:var(--ink);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px}
+#login-screen.hidden{display:none}
+.login-box{background:#fff;border-radius:var(--radius);padding:36px 32px;max-width:380px;width:100%;box-shadow:var(--shadow-lg);text-align:center}
+.login-logo{font-family:var(--serif);font-size:28px;font-weight:800;color:var(--ink);margin-bottom:4px}
+.login-logo em{font-style:normal;color:var(--gold)}
+.login-sub{font-size:11px;color:var(--ink3);letter-spacing:1px;text-transform:uppercase;margin-bottom:28px}
+.login-label{display:block;font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.8px;text-align:left;margin-bottom:5px}
+.login-input{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:14px;font-family:var(--sans);color:var(--ink);background:#f8f9fe;transition:var(--t);margin-bottom:12px}
+.login-input:focus{outline:none;border-color:var(--blue2);background:#fff;box-shadow:0 0 0 3px rgba(74,93,181,.1)}
+.login-btn{width:100%;padding:12px;background:var(--ink);color:#fff;border:none;border-radius:var(--r-sm);font-size:14px;font-weight:700;font-family:var(--sans);cursor:pointer;transition:var(--t);margin-top:4px}
+.login-btn:hover{background:var(--blue)}.login-btn:active{transform:scale(.98)}
+.login-err{color:var(--red);font-size:12px;margin-top:10px;min-height:18px;font-weight:600}
+.login-users{margin-top:20px;padding-top:16px;border-top:1px solid var(--border)}
+.login-users-title{font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px}
+.user-chips{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:10px}
+.user-chip{padding:5px 12px;background:var(--blue-light);color:var(--blue);border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:none;font-family:var(--sans);transition:var(--t)}
+.user-chip:hover{background:var(--blue);color:#fff}
+.login-other-hint{font-size:11px;color:var(--ink3);text-align:center;font-style:italic}
+
+/* ── TOAST ── */
 #tst{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(10px);padding:11px 22px;border-radius:100px;font-size:13px;font-weight:500;color:#fff;background:var(--ink);opacity:0;transition:opacity .22s,transform .22s;pointer-events:none;z-index:10001;white-space:nowrap;box-shadow:var(--shadow-md)}
 #tst.s{opacity:1;transform:translateX(-50%) translateY(0)}
 #tst.ok{background:var(--green)}#tst.w{background:#b05c00}#tst.e{background:var(--red)}
-/* LAYOUT */
+
+/* ── LAYOUT ── */
 .app{max-width:1680px;margin:0 auto;padding:20px 16px}
-/* HEADER */
+.app.hidden{display:none}
+
+/* ── HEADER ── */
 header{background:var(--ink);color:#fff;padding:22px 28px;border-radius:var(--radius);margin-bottom:14px;box-shadow:var(--shadow-lg);position:relative;overflow:hidden}
 header::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 85% 50%,rgba(201,168,76,.18) 0%,transparent 55%),radial-gradient(ellipse at 5% 100%,rgba(44,62,140,.5) 0%,transparent 50%);pointer-events:none}
 .hrow{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;position:relative}
 .htitles h1{font-family:var(--serif);font-size:26px;font-weight:800;line-height:1.1}
 .htitles h1 em{font-style:normal;color:var(--gold)}
 .hsub{font-size:11px;opacity:.5;margin-top:5px;letter-spacing:1px;text-transform:uppercase}
+.hright{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .badge{background:rgba(201,168,76,.18);border:1px solid rgba(201,168,76,.4);color:var(--gold2);border-radius:20px;padding:6px 16px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase}
-/* SYNCBAR */
+.user-info{display:flex;align-items:center;gap:8px}
+.user-name{font-size:12px;color:rgba(255,255,255,.7);font-weight:600}
+.logout-btn{padding:5px 12px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.7);border-radius:20px;font-size:11px;cursor:pointer;font-family:var(--sans);transition:var(--t)}
+.logout-btn:hover{background:rgba(255,255,255,.2);color:#fff}
+
+/* ── ONLINE PRESENCE ── */
+.online-bar{display:flex;align-items:center;gap:8px;background:var(--surface);border-radius:var(--r-sm);padding:8px 16px;margin-bottom:14px;box-shadow:var(--shadow);border:1px solid var(--border);flex-wrap:wrap;min-height:38px}
+.online-label{font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.8px;white-space:nowrap}
+.online-chips{display:flex;gap:6px;flex-wrap:wrap;flex:1}
+.ochip{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;background:var(--green-light);color:var(--green);border-radius:20px;font-size:11px;font-weight:600}
+.ochip::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0}
+.ochip.me{background:var(--blue-light);color:var(--blue)}
+.ochip.me::before{background:var(--blue)}
+
+/* ── SYNCBAR ── */
 .syncbar{display:flex;align-items:center;gap:10px;background:var(--surface);border-radius:var(--r-sm);padding:11px 16px;margin-bottom:14px;box-shadow:var(--shadow);flex-wrap:wrap;border:1px solid var(--border)}
 .sdot{width:9px;height:9px;border-radius:50%;flex-shrink:0;transition:background .4s}
 .sdot.idle{background:#c5c7d4}.sdot.ok{background:#2a9d5c}
@@ -57,12 +96,20 @@ header::before{content:'';position:absolute;inset:0;background:radial-gradient(e
 .sbtn{padding:7px 16px;background:var(--blue);color:#fff;border:none;border-radius:var(--r-sm);cursor:pointer;font-size:12px;font-weight:600;font-family:var(--sans);transition:var(--t)}
 .sbtn:hover{background:var(--blue2)}.sbtn:active{transform:scale(.95)}
 .sbtn:disabled{background:var(--border);color:var(--ink3);cursor:not-allowed}
-/* TABS */
+
+/* ── CONFLICT BANNER ── */
+#conflict-banner{display:none;background:var(--gold-bg);border:1.5px solid var(--gold);border-radius:var(--r-sm);padding:10px 16px;margin-bottom:14px;font-size:12px;color:#7a5c00;font-weight:600;align-items:center;gap:10px}
+#conflict-banner.show{display:flex}
+#conflict-banner button{margin-left:auto;padding:5px 14px;background:var(--gold);color:var(--ink);border:none;border-radius:var(--r-sm);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans)}
+
+/* ── TABS ── */
 .tabs{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
 .tbtn{padding:10px 20px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r-sm);cursor:pointer;font-size:13px;font-weight:600;font-family:var(--sans);transition:var(--t);white-space:nowrap;color:var(--ink2)}
 .tbtn:hover:not(.on){border-color:var(--blue2);color:var(--blue)}
 .tbtn.on{background:var(--ink);color:#fff;border-color:var(--ink);box-shadow:var(--shadow-md)}
 .tbtn.cfg.on{background:var(--gold);color:var(--ink);border-color:var(--gold)}
+.tbtn .editing-dot{display:none;width:7px;height:7px;border-radius:50%;background:var(--gold);margin-left:5px;vertical-align:middle}
+.tbtn.being-edited .editing-dot{display:inline-block;animation:bl .8s infinite}
 .tpanel{display:none;background:var(--surface);padding:22px;border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--border)}
 .tpanel.on{display:block;animation:fup .18s ease}
 @keyframes fup{from{opacity:.4;transform:translateY(5px)}to{opacity:1;transform:none}}
@@ -70,7 +117,8 @@ header::before{content:'';position:absolute;inset:0;background:radial-gradient(e
 .ttitle{font-family:var(--serif);font-size:20px;font-weight:700}
 .tinfo{font-size:12px;color:var(--ink3);margin-top:4px}
 .tcount{font-size:11px;background:var(--blue-light);color:var(--blue);padding:4px 12px;border-radius:20px;font-weight:600}
-/* DISCIPLINAS */
+
+/* ── DISCIPLINAS ── */
 .dsec{margin-bottom:16px;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
 .dsec-hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;gap:12px;background:linear-gradient(90deg,var(--ink) 0%,#2c3e8c 100%);cursor:pointer;user-select:none;flex-wrap:wrap}
 .dtitle{font-family:var(--serif);font-weight:700;font-size:14px;color:#fff;flex:1}
@@ -88,7 +136,8 @@ header::before{content:'';position:absolute;inset:0;background:radial-gradient(e
 .ainput{width:100%;padding:5px 7px;border:1px solid var(--border);border-radius:5px;font-size:11px;font-family:var(--sans);background:#f8f9fe;transition:var(--t)}
 .ainput:focus{outline:none;border-color:var(--blue2);background:#fff}
 .ainput+.ainput{margin-top:4px}
-/* TABELA */
+
+/* ── TABELA ── */
 .twrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
 table{width:100%;border-collapse:collapse;font-size:12px}
 th{background:var(--ink);color:rgba(255,255,255,.8);padding:10px 8px;font-weight:600;white-space:nowrap;text-align:left;font-size:11px;letter-spacing:.3px}
@@ -107,7 +156,8 @@ tbody tr:hover td{background:var(--blue-light)}
 .ni:focus{outline:none;border-color:var(--blue2);box-shadow:0 0 0 3px rgba(74,93,181,.1)}
 .ename{display:inline-block;padding:3px 8px;border:1.5px dashed var(--border);border-radius:5px;cursor:pointer;transition:var(--t)}
 .ename:hover{background:var(--blue-light);border-color:var(--blue2);color:var(--blue)}
-/* RESUMO */
+
+/* ── RESUMO ── */
 .resumo{background:linear-gradient(135deg,var(--ink) 0%,var(--blue) 100%);padding:20px;border-radius:var(--radius);margin-top:20px;box-shadow:var(--shadow-md)}
 .rtitle{font-family:var(--serif);font-size:16px;color:#fff;margin-bottom:14px;display:flex;align-items:center;gap:10px}
 .rtitle::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.15)}
@@ -120,7 +170,8 @@ tbody tr:hover td{background:var(--blue-light)}
 .pct-hi{background:rgba(42,157,92,.3)!important;color:#5ef0a4!important}
 .pct-md{background:rgba(201,168,76,.3)!important;color:var(--gold2)!important}
 .pct-lo{background:rgba(155,35,53,.3)!important;color:#ff8fa0!important}
-/* BOTÕES */
+
+/* ── BOTÕES ── */
 .exprow{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
 .ebtn{padding:10px 20px;border:none;border-radius:var(--r-sm);cursor:pointer;font-weight:600;font-size:13px;font-family:var(--sans);transition:var(--t);display:inline-flex;align-items:center;gap:6px}
 .ebtn.pri{background:var(--ink);color:#fff}.ebtn.pri:hover{background:var(--blue)}
@@ -128,7 +179,8 @@ tbody tr:hover td{background:var(--blue-light)}
 .ebtn.gld{background:var(--gold);color:var(--ink)}.ebtn.gld:hover{background:var(--gold2)}
 .ebtn:active{transform:scale(.95)}
 .global-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:18px;padding:20px;background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);box-shadow:var(--shadow)}
-/* MODAL */
+
+/* ── MODAL ── */
 .modal-ov{display:none;position:fixed;inset:0;background:rgba(15,15,40,.65);z-index:8000;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px)}
 .modal-ov.show{display:flex}
 .modal{background:#fff;border-radius:var(--radius);padding:28px;max-width:460px;width:100%;box-shadow:var(--shadow-lg);animation:zin .18s ease}
@@ -140,7 +192,8 @@ tbody tr:hover td{background:var(--blue-light)}
 .btn-c:hover{border-color:var(--ink2)}
 .btn-ok{padding:9px 18px;background:var(--blue);color:#fff;border:none;border-radius:var(--r-sm);cursor:pointer;font-weight:600;font-family:var(--sans);font-size:13px;transition:var(--t)}
 .btn-ok:hover{background:var(--blue2)}
-/* CONFIGURAÇÕES */
+
+/* ── CONFIGURAÇÕES ── */
 .cfg-sec{margin-bottom:24px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
 .cfg-sec-hdr{padding:14px 20px;background:linear-gradient(90deg,var(--ink),var(--blue));color:#fff;font-family:var(--serif);font-size:15px;font-weight:700}
 .cfg-body{padding:20px}
@@ -161,7 +214,8 @@ tbody tr:hover td{background:var(--blue-light)}
 .disc-num{font-size:11px;font-weight:700;color:var(--ink3);width:22px;flex-shrink:0}
 .disc-inp{flex:2;padding:6px 10px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:12px;font-family:var(--sans);background:#fff;transition:var(--t)}
 .disc-inp:focus{outline:none;border-color:var(--blue2)}
-/* FOOTER */
+
+/* ── FOOTER ── */
 footer{margin-top:40px;padding:18px 0;border-top:1px solid var(--border);text-align:center;color:var(--ink3);font-size:11px;line-height:2.2}
 footer strong{color:var(--ink2)}
 @media(max-width:600px){
@@ -173,8 +227,28 @@ footer strong{color:var(--ink2)}
 </head>
 <body>
 
+<!-- ── ECRÃ DE LOGIN ── -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">📚 Academia da <em>Palavra</em></div>
+    <div class="login-sub">Gestor de Turmas · CCIC</div>
+    <label class="login-label">O teu nome</label>
+    <input class="login-input" id="login-user" placeholder="Clica no teu nome ou escreve aqui…" autocomplete="off" maxlength="40">
+    <label class="login-label">Senha de acesso</label>
+    <input class="login-input" id="login-pass" type="password" placeholder="Senha" autocomplete="current-password">
+    <button class="login-btn" onclick="doLogin()">Entrar →</button>
+    <div class="login-err" id="login-err"></div>
+    <div class="login-users">
+      <div class="login-users-title">Acesso rápido — clica no teu nome</div>
+      <div class="user-chips" id="user-chips"></div>
+      <div class="login-other-hint">Outro professor? Escreve o teu nome no campo acima.</div>
+    </div>
+  </div>
+</div>
+
 <div id="tst"></div>
 
+<!-- ── MODAL IMPORTAR ── -->
 <div class="modal-ov" id="importModal">
   <div class="modal">
     <h3>⚠️ Confirmar Importação</h3>
@@ -186,16 +260,34 @@ footer strong{color:var(--ink2)}
   </div>
 </div>
 
-<div class="app">
+<div class="app hidden" id="main-app">
   <header>
     <div class="hrow">
       <div class="htitles">
         <h1>📚 Gestor de <em>Turmas</em></h1>
         <div class="hsub">Academia da Palavra · Presenças &amp; Notas · CCIC</div>
       </div>
-      <div class="badge">CCIC</div>
+      <div class="hright">
+        <div class="user-info">
+          <span class="user-name" id="header-user"></span>
+          <button class="logout-btn" onclick="doLogout()">Sair</button>
+        </div>
+        <div class="badge">CCIC</div>
+      </div>
     </div>
   </header>
+
+  <!-- Quem está online -->
+  <div class="online-bar" id="online-bar">
+    <span class="online-label">🟢 Online</span>
+    <div class="online-chips" id="online-chips"></div>
+  </div>
+
+  <!-- Banner de conflito -->
+  <div id="conflict-banner">
+    ⚠️ <span id="conflict-msg">Outro professor guardou dados enquanto editavas.</span>
+    <button onclick="dismissConflict()">OK, actualizado</button>
+  </div>
 
   <div class="syncbar">
     <div class="sdot idle" id="sdot"></div>
@@ -205,10 +297,11 @@ footer strong{color:var(--ink2)}
   </div>
 
   <div class="tabs">
-    <button class="tbtn on"  onclick="showTab('tA',this)">📗 Turma A</button>
-    <button class="tbtn"     onclick="showTab('tB',this)">📘 Turma B</button>
-    <button class="tbtn"     onclick="showTab('tP',this)">📙 Presencial</button>
-    <button class="tbtn"     onclick="showTab('tR',this)">📒 Cooperadores</button>
+    <button class="tbtn on"  onclick="showTab('tA',this)">📗 Turma A<span class="editing-dot"></span></button>
+    <button class="tbtn"     onclick="showTab('tB',this)">📘 Turma B<span class="editing-dot"></span></button>
+    <button class="tbtn"     onclick="showTab('tP',this)">📙 Presencial<span class="editing-dot"></span></button>
+    <button class="tbtn"     onclick="showTab('tR',this)">📒 Cooperadores<span class="editing-dot"></span></button>
+    <button class="tbtn"     onclick="showTab('tH',this)">🏫 Huambo<span class="editing-dot"></span></button>
     <button class="tbtn cfg" onclick="showTab('tCFG',this)">⚙️ Configurações</button>
   </div>
 
@@ -248,6 +341,15 @@ footer strong{color:var(--ink2)}
     <div class="exprow"><button class="ebtn pri" onclick="exportCSV('tR')">📥 Exportar CSV</button></div>
   </div>
 
+  <div id="tH" class="tpanel">
+    <div class="thdr">
+      <div><div class="ttitle" id="title-tH">Turma Huambo</div><div class="tinfo" id="info-tH"></div></div>
+      <div class="tcount" id="cnt-tH"></div>
+    </div>
+    <div id="tH-c"></div>
+    <div class="exprow"><button class="ebtn pri" onclick="exportCSV('tH')">📥 Exportar CSV</button></div>
+  </div>
+
   <div id="tCFG" class="tpanel">
     <div class="thdr">
       <div><div class="ttitle">⚙️ Configurações</div><div class="tinfo">Edite turmas e disciplinas</div></div>
@@ -282,34 +384,49 @@ footer strong{color:var(--ink2)}
 
   <footer>
     <div>📚 <strong>Gestor de Turmas</strong> — Academia da Palavra · CCIC</div>
-    <div>Sincronização Firebase · Backup local automático</div>
+    <div>Sincronização Firebase por turma · Backup local automático</div>
     <div>Desenvolvido por <strong>Almerindo Assunção</strong> · © 2026</div>
   </footer>
 </div>
 
 <script type="module">
-import { initializeApp }               from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-import { getDatabase, ref, set, onValue } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js';
+import { initializeApp }   from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getDatabase, ref, set, get, onValue, onDisconnect, serverTimestamp, remove }
+  from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js';
 
-// ─── CONFIGURAÇÃO FIREBASE ────────────────────────────────────────────
+// ─── CONFIGURAÇÃO ────────────────────────────────────────────────────
 const FB_CFG = {
   apiKey:            'AIzaSyCLhhgUyhd4QS1Fw6Q5ai_wQytCcipro_Y',
   authDomain:        'gestor-de-turmas-ap.firebaseapp.com',
-  databaseURL:       'https://gestor-de-turmas-ap-default-rtdb.europe-west1.firebasedatabase.app',
+  databaseURL:       'https://gestor-de-turmas-ap-default-rtdb.firebaseio.com',
   projectId:         'gestor-de-turmas-ap',
   storageBucket:     'gestor-de-turmas-ap.firebasestorage.app',
   messagingSenderId: '685009671697',
   appId:             '1:685009671697:web:cec07315adce77b11cc3b0'
 };
-const FB_REF  = 'dados_v4';
-const LS_KEY  = 'ccic_ap_v4';
 
-// ─── DEFINIÇÃO ESTÁTICA (editável nas Configurações) ──────────────────
+// Senha de acesso única da escola — pode ser alterada aqui
+const APP_PASSWORD = 'academia2026';
+
+// Nomes habituais para acesso rápido
+const KNOWN_USERS = [
+  'Almerindo','Sandro','Ismael','Osvaldo B','Paulo K','Paulo D',
+  'Marcelino','Marcelino C','Lisandro','Celma','Emilson',
+  'Elsando V','Petra V','Victor','Elson','Nelson G'
+];
+
+// Caminho base no Firebase — cada turma tem o seu próprio nó independente
+const FB_BASE  = 'ap_v6';
+const LS_KEY   = 'ccic_ap_v6';
+
+// ─── DEFINIÇÃO ESTÁTICA ───────────────────────────────────────────────
 const DEF = {
   tA: { nome:'Turma A',                horario:'Segundas e Sextas · 18:30–20:00', n:32, aulas:5, info:['Aula 1','Aula 2','Aula 3','Prova','Correção'] },
   tB: { nome:'Turma B',                horario:'Segundas e Sextas · 18:30–20:00', n:32, aulas:5, info:['Aula 1','Aula 2','Aula 3','Prova','Correção'] },
   tP: { nome:'Turma Presencial',       horario:'Sábados · 09:00–11:00',           n:32, aulas:3, info:['Sábado 1','Sábado 2','Sábado 3'] },
-  tR: { nome:'Turma dos Cooperadores', horario:'Domingos · 08:00–09:00',          n:32, aulas:2, info:['Domingo 1','Domingo 2'] }
+  tR: { nome:'Turma dos Cooperadores', horario:'Domingos · 08:00–09:00',          n:32, aulas:2, info:['Domingo 1','Domingo 2'] },
+  tH: { nome:'Turma Huambo',           horario:'Huambo · 2026',                   n:19, aulas:5, info:['Aula 1','Aula 2','Aula 3','Prova','Correção'],
+        grupos: [{label:'Refrescamento', de:1, ate:15}, {label:'1ª Vez', de:16, ate:19}] }
 };
 
 let DISCS = [
@@ -330,20 +447,118 @@ let DISCS = [
 
 // ─── ESTADO ───────────────────────────────────────────────────────────
 let turmas = {}, dados = {}, aulasData = {};
-let db, dbRef, fbOk = false;
-let ignoreEcho = false, firstSnap = true;
-let saveTimer = null, isSaving = false, lastTS = null;
+let db, fbOk = false;
+let currentUser = null;  // nome do utilizador autenticado
+let sessionId = Math.random().toString(36).slice(2); // ID único desta sessão
+let presenceRef = null;  // ref Firebase para presença deste utilizador
+
+// Save por turma: cada turma tem o seu próprio timer, flag de saving e lastSaveId
+const tkState = {};
+Object.keys(DEF).forEach(tk => {
+  tkState[tk] = { saveTimer: null, isSaving: false, pendingSave: false, lastSaveId: null };
+});
+
+let lastTS = null;
 let pendingImport = null;
-const rendered = {}; // cache de corpos de disciplinas já renderizados
+const rendered = {};
+
+// Backup reminder: marcar se exportou JSON nesta sessão
+let exportedThisSession = false;
+
+// ─── AUTENTICAÇÃO LOCAL ───────────────────────────────────────────────
+function setupLogin() {
+  // Mostrar chips de utilizadores conhecidos
+  const chips = document.getElementById('user-chips');
+  KNOWN_USERS.forEach(name => {
+    const b = document.createElement('button');
+    b.className = 'user-chip';
+    b.textContent = name;
+    b.onclick = () => { document.getElementById('login-user').value = name; document.getElementById('login-pass').focus(); };
+    chips.appendChild(b);
+  });
+
+  // Verificar sessão guardada
+  try {
+    const saved = sessionStorage.getItem('ap_session');
+    if (saved) {
+      const s = JSON.parse(saved);
+      if (s.user && s.ts && Date.now() - s.ts < 8 * 60 * 60 * 1000) { // 8h
+        currentUser = s.user;
+        launchApp();
+        return;
+      }
+    }
+  } catch(e) {}
+
+  // Permitir Enter nos campos
+  document.getElementById('login-pass').onkeydown = e => { if (e.key === 'Enter') doLogin(); };
+  document.getElementById('login-user').onkeydown = e => { if (e.key === 'Enter') document.getElementById('login-pass').focus(); };
+}
+
+window.doLogin = () => {
+  const user = document.getElementById('login-user').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  const err  = document.getElementById('login-err');
+  if (!user) { err.textContent = 'Indica o teu nome.'; return; }
+  if (pass !== APP_PASSWORD) { err.textContent = 'Senha incorrecta. Tenta novamente.'; return; }
+  err.textContent = '';
+  currentUser = user;
+  try { sessionStorage.setItem('ap_session', JSON.stringify({user, ts: Date.now()})); } catch(e) {}
+  launchApp();
+};
+
+window.doLogout = () => {
+  if (!exportedThisSession) {
+    if (!confirm('⚠️ Não fizeste backup JSON nesta sessão.\n\nRecomenda-se exportar antes de sair.\n\nSair mesmo assim?')) return;
+  }
+  cleanupPresence();
+  try { sessionStorage.removeItem('ap_session'); } catch(e) {}
+  currentUser = null;
+  document.getElementById('main-app').classList.add('hidden');
+  document.getElementById('login-screen').classList.remove('hidden');
+  document.getElementById('login-pass').value = '';
+  document.getElementById('login-err').textContent = '';
+};
+
+function launchApp() {
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('main-app').classList.remove('hidden');
+  document.getElementById('header-user').textContent = '👤 ' + currentUser;
+
+  initStruct();
+  const cached = lload();
+  if (cached) applyPayload(cached);
+
+  requestAnimationFrame(() => {
+    const ap = document.querySelector('.tpanel.on');
+    if (ap) renderTurma(ap.id);
+    setSyncUI('load', 'A ligar…');
+    setTimeout(() => {
+      if (document.getElementById('sdot').classList.contains('load'))
+        setSyncUI('err', 'Sem ligação — dados locais');
+    }, 8000);
+    fbInit();
+  });
+}
 
 // ─── LOCAL STORAGE ────────────────────────────────────────────────────
-const lsave = p => { try { localStorage.setItem(LS_KEY, JSON.stringify(p)); } catch(e) {} };
-const lload = () => { try { const r = localStorage.getItem(LS_KEY); return r ? JSON.parse(r) : null; } catch(e) { return null; } };
+const lsave = p => {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(p)); }
+  catch(e) {
+    console.warn('lsave error:', e);
+    if (e && (e.name === 'QuotaExceededError' || e.code === 22))
+      toast('⚠️ Memória local cheia — apenas guardado na nuvem', 'w');
+  }
+};
+const lload = () => {
+  try { const r = localStorage.getItem(LS_KEY); return r ? JSON.parse(r) : null; }
+  catch(e) { return null; }
+};
 
 // ─── ESCAPE HTML ──────────────────────────────────────────────────────
 const esc = s => String(s)
-  .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-  .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+  .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
 // ─── TOAST ────────────────────────────────────────────────────────────
 let toastTimer;
@@ -374,10 +589,9 @@ function initStruct() {
         nome:    d.nome,
         horario: d.horario,
         alunos:  Array.from({length: d.n}, (_, i) => ({id: i+1, nome: `Aluno ${i+1}`})),
-        discs:   DISCS.map(dc => ({...dc, professor: dc.prof, aulas: d.aulas, info: d.info}))
+        discs:   DISCS.map(dc => ({...dc, professor: dc.prof, aulas: d.aulas, info: [...d.info]}))
       };
     }
-    // Actualizar DOM
     const tEl = document.getElementById('title-' + tk);
     const iEl = document.getElementById('info-'  + tk);
     if (tEl) tEl.textContent = turmas[tk].nome;
@@ -391,49 +605,80 @@ function fixDados() {
     if (!turmas[tk]) return;
     if (!dados[tk])     dados[tk]     = {};
     if (!aulasData[tk]) aulasData[tk] = {};
-    const nAulas = DEF[tk].aulas;
     turmas[tk].alunos.forEach(a => {
       if (!dados[tk][a.id]) dados[tk][a.id] = {};
       turmas[tk].discs.forEach(d => {
+        const nAulas = d.aulas || DEF[tk].aulas;
         const ex = dados[tk][a.id][d.id];
         if (!ex || !Array.isArray(ex.aulas) || ex.aulas.length !== nAulas) {
           const prev = (ex && Array.isArray(ex.aulas)) ? ex.aulas : [];
           dados[tk][a.id][d.id] = {
-            aulas: Array.from({length: nAulas}, (_, i) => prev[i] ?? 0),
+            aulas: Array.from({length: nAulas}, (_, i) => (prev[i] === 1 ? 1 : 0)),
             nota:  ex ? (parseFloat(ex.nota) || 0) : 0
           };
         }
       });
     });
     turmas[tk].discs.forEach(d => {
+      const nAulas = d.aulas || DEF[tk].aulas;
       const ex = aulasData[tk][d.id];
       if (!ex) {
         aulasData[tk][d.id] = {datas: Array(nAulas).fill(''), dias: Array(nAulas).fill('')};
       } else {
-        const n = turmas[tk].discs.find(x => x.id === d.id)?.aulas || nAulas;
-        if (!Array.isArray(ex.datas) || ex.datas.length !== n)
-          ex.datas = Array.from({length: n}, (_, i) => (ex.datas || [])[i] || '');
-        if (!Array.isArray(ex.dias)  || ex.dias.length  !== n)
-          ex.dias  = Array.from({length: n}, (_, i) => (ex.dias  || [])[i] || '');
+        if (!Array.isArray(ex.datas) || ex.datas.length !== nAulas)
+          ex.datas = Array.from({length: nAulas}, (_, i) => (ex.datas||[])[i] || '');
+        if (!Array.isArray(ex.dias)  || ex.dias.length  !== nAulas)
+          ex.dias  = Array.from({length: nAulas}, (_, i) => (ex.dias ||[])[i] || '');
       }
     });
   });
 }
 
-// ─── PAYLOAD ──────────────────────────────────────────────────────────
-function buildPayload() {
+// ─── ACESSO SEGURO A DADOS ────────────────────────────────────────────
+function getDado(tk, aid, did) {
+  return (dados[tk] && dados[tk][aid] && dados[tk][aid][did])
+    ? dados[tk][aid][did]
+    : { aulas: [], nota: 0 };
+}
+
+// ─── PAYLOAD GLOBAL (para backup/restore) ────────────────────────────
+function buildFullPayload() {
   const nomes = {}, profs = {};
   Object.keys(turmas).forEach(tk => {
     nomes[tk] = turmas[tk].alunos.map(a => ({id: a.id, nome: a.nome}));
     profs[tk] = turmas[tk].discs.map(d => ({id: d.id, professor: d.professor}));
   });
-  return {v: 4, ts: new Date().toISOString(), dados, aulasData, nomes, profs};
+  return {
+    v: 6, ts: new Date().toISOString(),
+    dados:     JSON.parse(JSON.stringify(dados)),
+    aulasData: JSON.parse(JSON.stringify(aulasData)),
+    nomes, profs
+  };
+}
+
+// Payload por turma individual (para save granular no Firebase)
+function buildTurmaPayload(tk) {
+  return {
+    sid: Math.random().toString(36).slice(2),
+    ts:  new Date().toISOString(),
+    editedBy: currentUser || '—',
+    dados:     JSON.parse(JSON.stringify(dados[tk]     || {})),
+    aulasData: JSON.parse(JSON.stringify(aulasData[tk] || {})),
+    nomes:     turmas[tk].alunos.map(a => ({id: a.id, nome: a.nome})),
+    profs:     turmas[tk].discs.map(d => ({id: d.id, professor: d.professor}))
+  };
 }
 
 function applyPayload(p) {
-  if (!p || !p.v) return false;
-  if (p.dados)     dados     = p.dados;
-  if (p.aulasData) aulasData = p.aulasData;
+  if (!p) return false;
+  // Suporta formato v6 (por turma) e v4/v5 (legacy, para importação de backups antigos)
+  const version = p.v || 0;
+  if (version < 4) {
+    toast('⚠️ Backup demasiado antigo (v' + version + '). Ignorado.', 'w');
+    return false;
+  }
+  if (p.dados)     dados     = JSON.parse(JSON.stringify(p.dados));
+  if (p.aulasData) aulasData = JSON.parse(JSON.stringify(p.aulasData));
   if (p.nomes) Object.keys(p.nomes).forEach(tk => {
     if (!turmas[tk]) return;
     p.nomes[tk].forEach(n => {
@@ -453,43 +698,103 @@ function applyPayload(p) {
   return true;
 }
 
+// Aplica dados de uma única turma vindos do Firebase
+function applyTurmaPayload(tk, p) {
+  if (!p) return false;
+  if (p.dados)     dados[tk]     = JSON.parse(JSON.stringify(p.dados));
+  if (p.aulasData) aulasData[tk] = JSON.parse(JSON.stringify(p.aulasData));
+  if (p.nomes && turmas[tk]) {
+    p.nomes.forEach(n => {
+      const a = turmas[tk].alunos.find(a => a.id === n.id);
+      if (a && n.nome) a.nome = n.nome;
+    });
+  }
+  if (p.profs && turmas[tk]) {
+    p.profs.forEach(pd => {
+      const d = turmas[tk].discs.find(d => d.id === pd.id);
+      if (d && pd.professor) d.professor = pd.professor;
+    });
+  }
+  fixDados();
+  if (p.ts && (!lastTS || p.ts > lastTS)) lastTS = p.ts;
+  return true;
+}
+
 // ─── FIREBASE ─────────────────────────────────────────────────────────
 function fbInit() {
   try {
     const app = initializeApp(FB_CFG);
-    db    = getDatabase(app);
-    dbRef = ref(db, FB_REF);
-    fbOk  = true;
+    db   = getDatabase(app);
+    fbOk = true;
 
-    onValue(dbRef, snap => {
-      const remote = snap.val();
-      if (firstSnap) {
-        firstSnap = false;
-        if (!remote) { setSyncUI('ok', 'Ligado ✓ — base vazia'); return; }
-        if (ignoreEcho) { ignoreEcho = false; setSyncUI('ok', 'Ligado ✓'); return; }
-        if (applyPayload(remote)) {
-          lsave(remote);
-          const ap = document.querySelector('.tpanel.on');
-          if (ap && ap.id !== 'tCFG') renderTurma(ap.id);
+    // Contador: aguardar que TODAS as turmas respondam antes de actualizar UI
+    const tkKeys = Object.keys(DEF);
+    let snapsReceived = 0;
+
+    tkKeys.forEach(tk => {
+      const tkRef = ref(db, `${FB_BASE}/${tk}`);
+      let firstTkSnap = true;
+
+      onValue(tkRef, snap => {
+        const remote = snap.val();
+
+        if (firstTkSnap) {
+          firstTkSnap = false;
+          snapsReceived++;
+          tkState[tk].lastSaveId = null;
+
+          if (remote) applyTurmaPayload(tk, remote);
+
+          // Quando TODAS as turmas responderem — render e UI final
+          if (snapsReceived === tkKeys.length) {
+            lsave(buildFullPayload());
+            const ap = document.querySelector('.tpanel.on');
+            if (ap && ap.id !== 'tCFG') renderTurma(ap.id);
+            setSyncUI('ok', 'Ligado ✓ — dados actualizados');
+            // Se Firebase estava vazio, migrar dados do localStorage
+            tentarMigracao();
+          }
+          return;
         }
-        setSyncUI('ok', 'Ligado ✓ — dados actualizados');
-        return;
-      }
-      if (ignoreEcho) { ignoreEcho = false; setSyncUI('ok', 'Guardado ✓'); return; }
-      if (applyPayload(remote)) {
-        lsave(remote);
+
+        // Eco do nosso próprio save — ignorar
+        if (remote && remote.sid && remote.sid === tkState[tk].lastSaveId) {
+          tkState[tk].lastSaveId = null;
+          setSyncUI('ok', 'Guardado ✓');
+          return;
+        }
+
+        if (!remote) { setSyncUI('ok', 'Base limpa remotamente'); return; }
+
+        // Update de outro utilizador
+        const quem = remote.editedBy || 'Outro professor';
+        applyTurmaPayload(tk, remote);
+        lsave(buildFullPayload());
+
         const ap = document.querySelector('.tpanel.on');
-        if (ap && ap.id !== 'tCFG') renderTurma(ap.id);
-        const hora = lastTS
-          ? new Date(lastTS).toLocaleTimeString('pt-PT', {hour:'2-digit', minute:'2-digit'})
-          : '—';
+        if (ap && ap.id === tk) {
+          renderTurma(tk);
+          showConflict(`${quem} actualizou ${turmas[tk].nome}`);
+        } else {
+          markTabEdited(tk);
+        }
         setSyncUI('ok', 'Sincronizado ✓');
-        toast('🔄 Actualizado às ' + hora, 'ok');
-      }
-    }, err => {
-      console.warn('Firebase onValue error:', err);
-      setSyncUI('err', 'Sem ligação — dados locais');
+        if (ap && ap.id !== tk)
+          toast(`🔄 ${turmas[tk].nome} actualizada por ${quem}`, 'ok');
+
+      }, err => {
+        console.warn(`Firebase onValue error [${tk}]:`, err);
+        // Contar mesmo em erro para não bloquear o contador
+        if (firstTkSnap) {
+          firstTkSnap = false;
+          snapsReceived++;
+          if (snapsReceived === tkKeys.length)
+            setSyncUI('err', 'Sem ligação — dados locais');
+        }
+      });
     });
+
+    setupPresence();
 
   } catch(e) {
     fbOk = false;
@@ -498,35 +803,119 @@ function fbInit() {
   }
 }
 
-async function fbSave(p) {
-  if (!fbOk || !dbRef) return false;
+// Migração: se Firebase veio vazio mas localStorage tem dados, sincronizar
+function tentarMigracao() {
+  const todasVazias = Object.keys(DEF).every(tk =>
+    !dados[tk] || Object.keys(dados[tk]).length === 0
+  );
+  if (!todasVazias) return;
+  const cached = lload();
+  if (!cached || !cached.dados) return;
+  console.log('Firebase vazio — a migrar dados locais...');
+  if (applyPayload(cached)) {
+    const ap = document.querySelector('.tpanel.on');
+    if (ap && ap.id !== 'tCFG') renderTurma(ap.id);
+    Object.keys(DEF).forEach(tk => {
+      const p = buildTurmaPayload(tk);
+      set(ref(db, `${FB_BASE}/${tk}`), p)
+        .then(() => console.log(`Migração ${tk} OK`))
+        .catch(e => console.warn(`Migração ${tk} erro:`, e));
+    });
+    lsave(buildFullPayload());
+    toast('✅ Dados sincronizados com Firebase', 'ok');
+  }
+}
+
+async function fbSaveTurma(tk, p) {
+  if (!fbOk || !db) return false;
   try {
-    ignoreEcho = true;
-    await set(dbRef, p);
+    tkState[tk].lastSaveId = p.sid;
+    await set(ref(db, `${FB_BASE}/${tk}`), p);
     return true;
   } catch(e) {
-    ignoreEcho = false;
-    console.warn('fbSave error:', e);
+    tkState[tk].lastSaveId = null;
+    console.warn(`fbSave error [${tk}]:`, e);
     return false;
   }
 }
 
-// ─── GUARDAR ──────────────────────────────────────────────────────────
-function schedSave() {
-  clearTimeout(saveTimer);
-  setSyncUI('saving', 'A guardar…');
-  saveTimer = setTimeout(doSave, 600);
+// ─── PRESENÇA ONLINE ──────────────────────────────────────────────────
+function setupPresence() {
+  if (!db || !currentUser) return;
+  presenceRef = ref(db, `${FB_BASE}/__presence__/${sessionId}`);
+
+  set(presenceRef, { name: currentUser, ts: Date.now() });
+  onDisconnect(presenceRef).remove();
+
+  // Heartbeat a cada 30s para manter presença actualizada
+  setInterval(() => {
+    if (presenceRef && fbOk) set(presenceRef, { name: currentUser, ts: Date.now() }).catch(()=>{});
+  }, 30000);
+
+  // Observar todos os utilizadores online
+  onValue(ref(db, `${FB_BASE}/__presence__`), snap => {
+    const all = snap.val() || {};
+    const chips = document.getElementById('online-chips');
+    chips.innerHTML = '';
+    const now = Date.now();
+    Object.entries(all).forEach(([sid, info]) => {
+      if (!info || !info.name) return;
+      if (now - (info.ts || 0) > 90000) return; // ignora entradas > 90s sem heartbeat
+      const chip = document.createElement('span');
+      chip.className = 'ochip' + (sid === sessionId ? ' me' : '');
+      chip.textContent = info.name + (sid === sessionId ? ' (tu)' : '');
+      chips.appendChild(chip);
+    });
+  });
 }
 
-async function doSave() {
-  if (isSaving) { schedSave(); return; }
-  isSaving = true;
+function cleanupPresence() {
+  if (presenceRef && fbOk) remove(presenceRef).catch(()=>{});
+  presenceRef = null;
+}
+
+// ─── CONFLITO / TAB EDITADO ───────────────────────────────────────────
+function showConflict(msg) {
+  document.getElementById('conflict-msg').textContent = msg;
+  document.getElementById('conflict-banner').classList.add('show');
+  setTimeout(() => document.getElementById('conflict-banner').classList.remove('show'), 8000);
+}
+window.dismissConflict = () => document.getElementById('conflict-banner').classList.remove('show');
+
+function markTabEdited(tk) {
+  const tabIds = ['tA','tB','tP','tR','tH','tCFG'];
+  const idx = tabIds.indexOf(tk);
+  const btns = document.querySelectorAll('.tbtn');
+  if (btns[idx]) btns[idx].classList.add('being-edited');
+}
+function clearTabEdited(tk) {
+  const tabIds = ['tA','tB','tP','tR','tH','tCFG'];
+  const idx = tabIds.indexOf(tk);
+  const btns = document.querySelectorAll('.tbtn');
+  if (btns[idx]) btns[idx].classList.remove('being-edited');
+}
+
+// ─── GUARDAR POR TURMA ────────────────────────────────────────────────
+function schedSave(tk) {
+  const s = tkState[tk];
+  clearTimeout(s.saveTimer);
+  setSyncUI('saving', 'A guardar…');
+  if (s.isSaving) { s.pendingSave = true; return; }
+  s.saveTimer = setTimeout(() => doSaveTurma(tk), 600);
+}
+
+async function doSaveTurma(tk) {
+  const s = tkState[tk];
+  if (s.isSaving) return;
+  s.isSaving = true;
+  s.pendingSave = false;
   const btn = document.getElementById('sbtn');
   if (btn) btn.disabled = true;
   try {
-    const p = buildPayload();
-    lsave(p);                          // guarda local primeiro
-    const ok = await fbSave(p);        // depois Firebase
+    const p = buildTurmaPayload(tk);
+    // Guardar localmente o estado completo
+    lsave(buildFullPayload());
+    const ok = await fbSaveTurma(tk, p);
     lastTS = p.ts;
     setSyncUI(ok ? 'ok' : 'err',
       ok ? 'Guardado ✓ — visível para todos' : 'Sem internet — guardado localmente');
@@ -536,26 +925,41 @@ async function doSave() {
     }
   } catch(e) {
     setSyncUI('err', 'Erro ao guardar');
-    console.error('doSave error:', e);
+    console.error('doSaveTurma error:', e);
   } finally {
-    isSaving = false;
+    s.isSaving = false;
     if (btn) btn.disabled = false;
+    if (s.pendingSave) {
+      s.pendingSave = false;
+      clearTimeout(s.saveTimer);
+      s.saveTimer = setTimeout(() => doSaveTurma(tk), 600);
+    }
   }
 }
 
 window.syncNow = async () => {
-  clearTimeout(saveTimer);
-  await doSave();
-  if (fbOk) toast('✅ Sincronizado com todos os professores', 'ok');
-  else      toast('⚠️ Sem ligação — dados guardados localmente', 'w');
+  Object.keys(DEF).forEach(tk => { clearTimeout(tkState[tk].saveTimer); });
+  await Promise.all(Object.keys(DEF).map(tk => doSaveTurma(tk)));
+  const dotClass = document.getElementById('sdot').className;
+  if (dotClass.includes('ok')) toast('✅ Todas as turmas sincronizadas', 'ok');
+  else toast('⚠️ Sem ligação — dados guardados localmente', 'w');
 };
+
+// ─── LEMBRETE DE BACKUP AO FECHAR ────────────────────────────────────
+window.addEventListener('beforeunload', e => {
+  if (!currentUser) return;
+  if (!exportedThisSession) {
+    e.preventDefault();
+    e.returnValue = 'Não fizeste backup JSON nesta sessão. Sair mesmo assim?';
+  }
+});
 
 // ─── TABS ─────────────────────────────────────────────────────────────
 window.showTab = (name, btn) => {
   document.querySelectorAll('.tpanel').forEach(p => p.classList.remove('on'));
   document.querySelectorAll('.tbtn').forEach(b => b.classList.remove('on'));
   document.getElementById(name).classList.add('on');
-  if (btn) btn.classList.add('on');
+  if (btn) { btn.classList.add('on'); btn.classList.remove('being-edited'); }
   if (name === 'tCFG') renderCfg();
   else renderTurma(name);
 };
@@ -566,20 +970,15 @@ window.renderTurma = tk => {
   const cont = document.getElementById(tk + '-c');
   if (!t || !cont) return;
 
-  // Limpar cache desta turma para forçar re-render dos corpos
   Object.keys(rendered).forEach(k => { if (k.startsWith(tk + '-')) delete rendered[k]; });
 
-  // Actualizar contador
   const cntEl = document.getElementById('cnt-' + tk);
   if (cntEl) cntEl.textContent = t.alunos.length + ' alunos';
-
-  // Actualizar título/horário (pode ter sido editado nas configurações)
   const tEl = document.getElementById('title-' + tk);
   const iEl = document.getElementById('info-'  + tk);
   if (tEl) tEl.textContent = t.nome;
   if (iEl) iEl.textContent = t.horario;
 
-  // Construir esqueleto de acordeões (corpos são lazy)
   let h = '';
   t.discs.forEach(disc => {
     h += `<div class="dsec" id="dsec-${tk}-${disc.id}">
@@ -621,8 +1020,9 @@ function buildDiscBody(tk, disc) {
       onchange="editProf('${tk}',${disc.id},this.value)" placeholder="Nome do professor">
   </div><div class="agrid">`;
   for (let i = 0; i < disc.aulas; i++) {
+    const label = (disc.info && disc.info[i]) ? disc.info[i] : `Aula ${i+1}`;
     h += `<div class="acard">
-      <div class="albl">${esc(disc.info[i])}</div>
+      <div class="albl">${esc(label)}</div>
       <input type="date" class="ainput" value="${ai.datas[i] || ''}"
         onchange="editData('${tk}',${disc.id},${i},this.value)">
       <input type="text" class="ainput" placeholder="Ex: Segunda" value="${esc(ai.dias[i] || '')}"
@@ -632,24 +1032,43 @@ function buildDiscBody(tk, disc) {
   h += `</div><div class="twrap"><table>
     <thead><tr><th>Aluno</th>`;
   for (let i = 0; i < disc.aulas; i++) {
+    const label = (disc.info && disc.info[i]) ? disc.info[i] : `Aula ${i+1}`;
     h += `<th class="c" style="font-size:10px">
-      <div style="color:var(--gold2)">${esc(disc.info[i])}</div>
+      <div style="color:var(--gold2)">${esc(label)}</div>
       <div style="opacity:.5;font-weight:400">${esc(ai.dias[i] || '')} ${ai.datas[i] || '—'}</div>
     </th>`;
   }
   h += `<th class="c">Nota</th><th class="c">✅</th><th class="c">❌</th></tr></thead><tbody>`;
-  t.alunos.forEach(a => {
-    const d = dados[tk][a.id][disc.id];
+
+  // Grupos: se a turma tiver grupos definidos (ex: Huambo), inserir separadores
+  const grupos = DEF[tk] && DEF[tk].grupos ? DEF[tk].grupos : null;
+
+  t.alunos.forEach((a, idx) => {
+    const numAluno = idx + 1; // posição na lista (1-based)
+
+    // Inserir cabeçalho de grupo antes do primeiro aluno do grupo
+    if (grupos) {
+      const grp = grupos.find(g => g.de === numAluno);
+      if (grp) {
+        const cols = 3 + disc.aulas; // Aluno + aulas + Nota + ✅ + ❌
+        h += `<tr><td colspan="${cols}" style="background:var(--gold-bg);color:var(--gold);font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:6px 8px;border-bottom:2px solid var(--gold)">
+          ${grp.label} (${grp.ate - grp.de + 1} alunos)
+        </td></tr>`;
+      }
+    }
+
+    const d = getDado(tk, a.id, disc.id);
     const p = d.aulas.filter(x => x === 1).length;
     const f = d.aulas.filter(x => x === 0).length;
     h += `<tr id="row-${tk}-${a.id}-${disc.id}">
-      <td class="aname"><span class="ename" onclick="editNome(this,'${tk}',${a.id})">${esc(a.nome)}</span></td>`;
+      <td class="aname"><span class="ename" data-tk="${tk}" data-aid="${a.id}" onclick="editNome(this,'${tk}',${a.id})">${esc(a.nome)}</span></td>`;
     for (let i = 0; i < disc.aulas; i++) {
       h += `<td class="pc"><input type="checkbox" class="cb" ${d.aulas[i] === 1 ? 'checked' : ''}
         onchange="marcaP('${tk}',${a.id},${disc.id},${i},this.checked)"></td>`;
     }
     h += `<td class="nc"><input type="number" class="ni" value="${d.nota}" min="0" max="20" step="0.5"
-        oninput="editNota('${tk}',${a.id},${disc.id},this.value)"></td>
+        onchange="editNota('${tk}',${a.id},${disc.id},this.value)"
+        oninput="this.value=Math.min(20,Math.max(0,parseFloat(this.value)||0))"></td>
       <td class="tc p cell-pres">${p}</td>
       <td class="tc f cell-falt">${f}</td>
     </tr>`;
@@ -658,13 +1077,23 @@ function buildDiscBody(tk, disc) {
   return h;
 }
 
-function resumoHTML(tk) {
+function calcRows(tk) {
   const t = turmas[tk];
+  const grupos = DEF[tk] && DEF[tk].grupos ? DEF[tk].grupos : null;
   let rows = '';
-  t.alunos.forEach(a => {
+  t.alunos.forEach((a, idx) => {
+    const numAluno = idx + 1;
+    if (grupos) {
+      const grp = grupos.find(g => g.de === numAluno);
+      if (grp) {
+        rows += `<tr><td colspan="5" style="background:rgba(201,168,76,.15);color:var(--gold2);font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:6px 8px">
+          ${grp.label} (${grp.ate - grp.de + 1} alunos)
+        </td></tr>`;
+      }
+    }
     let m = 0, p = 0, f = 0;
     t.discs.forEach(d => {
-      const dd = dados[tk][a.id][d.id];
+      const dd = getDado(tk, a.id, d.id);
       m += dd.nota;
       p += dd.aulas.filter(x => x === 1).length;
       f += dd.aulas.filter(x => x === 0).length;
@@ -680,6 +1109,11 @@ function resumoHTML(tk) {
       <td class="tc ${cls}">${pct}%</td>
     </tr>`;
   });
+  return rows;
+}
+
+function resumoHTML(tk) {
+  const t = turmas[tk];
   return `<div class="resumo resumo-block">
     <div class="rtitle">📊 Resumo por Aluno</div>
     <div class="twrap"><table>
@@ -690,7 +1124,7 @@ function resumoHTML(tk) {
         <th class="c">Faltas</th>
         <th class="c">Assiduidade</th>
       </tr></thead>
-      <tbody>${rows}</tbody>
+      <tbody>${calcRows(tk)}</tbody>
     </table></div>
   </div>`;
 }
@@ -698,36 +1132,16 @@ function resumoHTML(tk) {
 window.updateResumo = tk => {
   const c = document.getElementById(tk + '-c');
   if (!c) return;
-  const rb = c.querySelector('.resumo-block');
-  if (!rb) return;
-  const tbody = rb.querySelector('tbody');
-  if (!tbody) return;
-  const t = turmas[tk];
-  let rows = '';
-  t.alunos.forEach(a => {
-    let m = 0, p = 0, f = 0;
-    t.discs.forEach(d => {
-      const dd = dados[tk][a.id][d.id];
-      m += dd.nota;
-      p += dd.aulas.filter(x => x === 1).length;
-      f += dd.aulas.filter(x => x === 0).length;
-    });
-    const tot = p + f;
-    const pct = tot > 0 ? (p / tot * 100).toFixed(1) : '0.0';
-    const cls = parseFloat(pct) >= 80 ? 'pct-hi' : parseFloat(pct) >= 60 ? 'pct-md' : 'pct-lo';
-    rows += `<tr>
-      <td class="aname">${esc(a.nome)}</td>
-      <td class="nc">${(m / t.discs.length).toFixed(2)}</td>
-      <td class="tc p">${p}</td>
-      <td class="tc f">${f}</td>
-      <td class="tc ${cls}">${pct}%</td>
-    </tr>`;
-  });
-  tbody.innerHTML = rows;
+  const tbody = c.querySelector('.resumo-block tbody');
+  if (tbody) tbody.innerHTML = calcRows(tk);
 };
 
 // ─── ACÇÕES ───────────────────────────────────────────────────────────
+// PRESENÇA: checkbox marcado = 1 (presente), desmarcado = 0 (falta/ausente)
+// Valor null = ainda não registado (aula futura) — não conta nem como presença nem falta
 window.marcaP = (tk, aid, did, i, v) => {
+  if (!dados[tk]?.[aid]?.[did]) return;
+  // Marcado → 1 (presente). Desmarcado → 0 (falta explícita).
   dados[tk][aid][did].aulas[i] = v ? 1 : 0;
   const row = document.getElementById(`row-${tk}-${aid}-${did}`);
   if (row) {
@@ -736,22 +1150,30 @@ window.marcaP = (tk, aid, did, i, v) => {
     row.querySelector('.cell-falt').textContent = aulas.filter(x => x === 0).length;
   }
   updateResumo(tk);
-  schedSave();
+  schedSave(tk);
 };
 
 window.editNota = (tk, aid, did, v) => {
-  dados[tk][aid][did].nota = parseFloat(v) || 0;
+  if (!dados[tk]?.[aid]?.[did]) return;
+  let val = parseFloat(v) || 0;
+  if (val < 0)  val = 0;
+  if (val > 20) val = 20;
+  dados[tk][aid][did].nota = val;
   updateResumo(tk);
-  schedSave();
+  schedSave(tk);
 };
 
 window.editProf = (tk, did, v) => {
   const d = turmas[tk].discs.find(d => d.id === did);
-  if (d) { d.professor = v; schedSave(); }
+  if (d) { d.professor = v; schedSave(tk); }
 };
 
-window.editData = (tk, did, i, v) => { aulasData[tk][did].datas[i] = v; schedSave(); };
-window.editDia  = (tk, did, i, v) => { aulasData[tk][did].dias[i]  = v; schedSave(); };
+window.editData = (tk, did, i, v) => {
+  if (aulasData[tk]?.[did]) { aulasData[tk][did].datas[i] = v; schedSave(tk); }
+};
+window.editDia = (tk, did, i, v) => {
+  if (aulasData[tk]?.[did]) { aulasData[tk][did].dias[i] = v; schedSave(tk); }
+};
 
 window.editNome = (el, tk, aid) => {
   const a = turmas[tk].alunos.find(a => a.id === aid);
@@ -761,20 +1183,30 @@ window.editNome = (el, tk, aid) => {
   el.innerHTML = `<input type="text" value="${esc(prev)}" autofocus
     style="border:none;padding:2px 5px;font-size:inherit;font-weight:inherit;width:130px;background:#fff;border-radius:3px;outline:none">`;
   const inp = el.querySelector('input');
-  inp.onblur = () => {
-    a.nome = inp.value.trim() || prev;
+  let finished = false;
+  const finish = () => {
+    if (finished) return;
+    finished = true;
+    const novo = inp.value.trim() || prev;
+    a.nome = novo;
     el.classList.remove('ed');
-    schedSave();
-    renderTurma(tk);
+    el.textContent = novo;
+    document.querySelectorAll(`.ename[data-tk="${tk}"][data-aid="${aid}"]`).forEach(span => {
+      if (span !== el && !span.classList.contains('ed')) span.textContent = novo;
+    });
+    updateResumo(tk);
+    schedSave(tk);
   };
-  inp.onkeydown = e => { if (e.key === 'Enter') inp.blur(); };
-  inp.focus();
-  inp.select();
+  inp.onblur = finish;
+  inp.onkeydown = e => {
+    if (e.key === 'Enter') inp.blur();
+    if (e.key === 'Escape') { finished = true; el.classList.remove('ed'); el.textContent = prev; }
+  };
+  inp.focus(); inp.select();
 };
 
 // ─── CONFIGURAÇÕES ────────────────────────────────────────────────────
 function renderCfg() {
-  // Grid das turmas
   const grid = document.getElementById('cfg-turmas-grid');
   if (grid) {
     grid.innerHTML = Object.keys(DEF).map(tk => {
@@ -797,7 +1229,6 @@ function renderCfg() {
       </div>`;
     }).join('');
   }
-  // Lista de disciplinas
   const list = document.getElementById('cfg-discs-list');
   if (list) {
     list.innerHTML = DISCS.map(d => `
@@ -810,35 +1241,38 @@ function renderCfg() {
 }
 
 window.saveCfgTurmas = () => {
+  let willRemove = false;
+  Object.keys(DEF).forEach(tk => {
+    const nAl = parseInt(document.getElementById('cfg-nalunos-' + tk)?.value) || turmas[tk].alunos.length;
+    if (nAl < turmas[tk].alunos.length) willRemove = true;
+  });
+  if (willRemove && !confirm('⚠️ Vai reduzir o número de alunos. Os dados dos alunos removidos serão perdidos. Continuar?')) return;
+
   Object.keys(DEF).forEach(tk => {
     const nome    = document.getElementById('cfg-nome-'    + tk)?.value.trim();
     const horario = document.getElementById('cfg-horario-' + tk)?.value.trim();
-    const nAl     = parseInt(document.getElementById('cfg-nalunos-' + tk)?.value) || turmas[tk].alunos.length;
-
+    const nAl     = Math.max(1, parseInt(document.getElementById('cfg-nalunos-' + tk)?.value) || turmas[tk].alunos.length);
     if (nome)    { turmas[tk].nome    = nome;    DEF[tk].nome    = nome; }
     if (horario) { turmas[tk].horario = horario; DEF[tk].horario = horario; }
-
     const cur = turmas[tk].alunos.length;
     if (nAl > cur) {
       for (let i = cur + 1; i <= nAl; i++) turmas[tk].alunos.push({id: i, nome: `Aluno ${i}`});
     } else if (nAl < cur) {
+      const idsRemovidos = turmas[tk].alunos.slice(nAl).map(a => a.id);
       turmas[tk].alunos = turmas[tk].alunos.slice(0, nAl);
+      if (dados[tk]) idsRemovidos.forEach(id => { delete dados[tk][id]; });
     }
     DEF[tk].n = nAl;
-
-    // Actualizar DOM do tab
     const tEl = document.getElementById('title-' + tk);
     const iEl = document.getElementById('info-'  + tk);
     if (tEl) tEl.textContent = turmas[tk].nome;
     if (iEl) iEl.textContent = turmas[tk].horario;
   });
-
   fixDados();
-  // Limpar cache e re-render da turma activa
   Object.keys(rendered).forEach(k => delete rendered[k]);
   const ap = document.querySelector('.tpanel.on');
   if (ap && ap.id !== 'tCFG') renderTurma(ap.id);
-  schedSave();
+  Object.keys(DEF).forEach(tk => schedSave(tk));
   toast('✅ Turmas actualizadas!', 'ok');
 };
 
@@ -848,41 +1282,43 @@ window.saveCfgDiscs = () => {
     const prof = document.getElementById('cfg-dprof-' + d.id)?.value.trim();
     if (nome) d.nome = nome;
     if (prof) d.prof = prof;
-    // Actualizar nas turmas activas
     Object.keys(turmas).forEach(tk => {
       const td = turmas[tk].discs.find(x => x.id === d.id);
-      if (td) {
-        if (nome) td.nome = nome;
-        // Não sobrescreve professor editado manualmente
-      }
+      if (td && nome) td.nome = nome;
     });
   });
-  // Limpar cache e re-render
   Object.keys(rendered).forEach(k => delete rendered[k]);
   const ap = document.querySelector('.tpanel.on');
   if (ap && ap.id !== 'tCFG') renderTurma(ap.id);
-  schedSave();
+  Object.keys(DEF).forEach(tk => schedSave(tk));
   toast('✅ Disciplinas actualizadas!', 'ok');
 };
 
 // ─── EXPORTAR / IMPORTAR ──────────────────────────────────────────────
+const csvEsc = v => {
+  const s = String(v ?? '');
+  if (s.includes('"') || s.includes(',') || s.includes('\n') || s.includes('\r'))
+    return '"' + s.replace(/"/g, '""') + '"';
+  return s;
+};
+
 window.exportCSV = tk => {
   const t = turmas[tk];
   let c = `Academia da Palavra - ${t.nome}\n${t.horario}\n\nAluno,`;
-  t.discs.forEach(d => { c += `${d.nome} (Nota),`; });
+  t.discs.forEach(d => { c += `${csvEsc(d.nome)} (Nota),`; });
   c += 'Média Final,Presenças,Faltas,% Assiduidade\n';
   t.alunos.forEach(a => {
-    c += `"${a.nome}",`;
+    c += `${csvEsc(a.nome)},`;
     let m = 0, p = 0, f = 0;
     t.discs.forEach(d => {
-      const dd = dados[tk][a.id][d.id];
+      const dd = getDado(tk, a.id, d.id);
       c += `${dd.nota},`;
       m += dd.nota;
       p += dd.aulas.filter(x => x === 1).length;
       f += dd.aulas.filter(x => x === 0).length;
     });
     const tot = p + f;
-    c += `${(m / t.discs.length).toFixed(2)},${p},${f},${tot > 0 ? ((p/tot)*100).toFixed(1) : '0.0'}%\n`;
+    c += `${(m/t.discs.length).toFixed(2)},${p},${f},${tot>0?((p/tot)*100).toFixed(1):'0.0'}%\n`;
   });
   dl(c, `${tk}_${hoje()}.csv`, 'text/csv;charset=utf-8;');
 };
@@ -892,28 +1328,29 @@ window.exportAll = () => {
   Object.keys(turmas).forEach(tk => {
     const t = turmas[tk];
     c += `\n\n=== ${t.nome} (${t.horario}) ===\n\nAluno,`;
-    t.discs.forEach(d => { c += `${d.nome} (Nota),`; });
+    t.discs.forEach(d => { c += `${csvEsc(d.nome)} (Nota),`; });
     c += 'Média Final,Presenças,Faltas,% Assiduidade\n';
     t.alunos.forEach(a => {
-      c += `"${a.nome}",`;
+      c += `${csvEsc(a.nome)},`;
       let m = 0, p = 0, f = 0;
       t.discs.forEach(d => {
-        const dd = dados[tk][a.id][d.id];
+        const dd = getDado(tk, a.id, d.id);
         c += `${dd.nota},`;
         m += dd.nota;
         p += dd.aulas.filter(x => x === 1).length;
         f += dd.aulas.filter(x => x === 0).length;
       });
       const tot = p + f;
-      c += `${(m / t.discs.length).toFixed(2)},${p},${f},${tot > 0 ? ((p/tot)*100).toFixed(1) : '0.0'}%\n`;
+      c += `${(m/t.discs.length).toFixed(2)},${p},${f},${tot>0?((p/tot)*100).toFixed(1):'0.0'}%\n`;
     });
   });
   dl(c, `Todas_Turmas_${hoje()}.csv`, 'text/csv;charset=utf-8;');
 };
 
 window.exportJSON = () => {
-  dl(JSON.stringify(buildPayload(), null, 2), `AcademiaPalavra_backup_${hoje()}.json`, 'application/json');
-  toast('💾 Backup guardado', 'ok');
+  dl(JSON.stringify(buildFullPayload(), null, 2), `AcademiaPalavra_backup_${hoje()}.json`, 'application/json');
+  exportedThisSession = true;
+  toast('💾 Backup guardado com sucesso', 'ok');
 };
 
 window.importJSON = input => {
@@ -929,27 +1366,30 @@ window.importJSON = input => {
     }
   };
   reader.readAsText(file);
-  input.value = ''; // limpar input para permitir reimportar o mesmo ficheiro
+  input.value = '';
 };
 
 window.confirmarImportacao = () => {
   if (!pendingImport) return;
   try {
-    applyPayload(pendingImport);
-    lsave(pendingImport);
+    const ok = applyPayload(pendingImport);
+    if (!ok) { fecharModal(); pendingImport = null; return; }
+    lsave(buildFullPayload());
     fecharModal();
-    // Limpar toda a cache de render
     Object.keys(rendered).forEach(k => delete rendered[k]);
-    // Ir para Turma A para mostrar dados imediatamente
+    const activePanel = document.querySelector('.tpanel.on');
+    const targetId = (activePanel && activePanel.id !== 'tCFG') ? activePanel.id : 'tA';
     document.querySelectorAll('.tpanel').forEach(p => p.classList.remove('on'));
     document.querySelectorAll('.tbtn').forEach(b => b.classList.remove('on'));
-    const fp = document.getElementById('tA');
-    const fb = document.querySelector('.tbtn');
+    const fp = document.getElementById(targetId);
+    const tabIds = ['tA','tB','tP','tR','tH','tCFG'];
+    const idx = tabIds.indexOf(targetId);
+    const allBtns = document.querySelectorAll('.tbtn');
     if (fp) fp.classList.add('on');
-    if (fb) fb.classList.add('on');
-    renderTurma('tA');
-    doSave();
-    toast('✅ Dados importados — Turma A actualizada', 'ok');
+    if (idx >= 0 && allBtns[idx]) allBtns[idx].classList.add('on');
+    renderTurma(targetId);
+    Object.keys(DEF).forEach(tk => doSaveTurma(tk));
+    toast('✅ Dados importados com sucesso', 'ok');
   } catch(err) {
     toast('❌ Erro na importação: ' + err.message, 'e');
     console.error('importação error:', err);
@@ -963,38 +1403,17 @@ window.fecharModal = () => {
 };
 
 function dl(content, name, mime) {
+  const url = URL.createObjectURL(new Blob([content], {type: mime}));
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([content], {type: mime}));
-  a.download = name;
-  a.style.display = 'none';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+  a.href = url; a.download = name; a.style.display = 'none';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 100);
 }
 
 const hoje = () => new Date().toISOString().split('T')[0];
 
 // ─── ARRANQUE ─────────────────────────────────────────────────────────
-(() => {
-  initStruct();
-  const cached = lload();
-  if (cached) {
-    applyPayload(cached);
-    fixDados();
-  }
-  requestAnimationFrame(() => {
-    const ap = document.querySelector('.tpanel.on');
-    if (ap) renderTurma(ap.id);
-    setSyncUI('load', 'A ligar ao servidor…');
-    // Timeout de segurança: se ao fim de 8s ainda não ligou, mostra erro
-    setTimeout(() => {
-      if (document.getElementById('sdot').classList.contains('load')) {
-        setSyncUI('err', 'Sem ligação ao servidor — dados locais');
-      }
-    }, 8000);
-    fbInit();
-  });
-})();
+setupLogin();
 </script>
 </body>
 </html>
