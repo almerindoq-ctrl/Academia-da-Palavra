@@ -656,7 +656,8 @@ function fixDados() {
         if (!ex || !Array.isArray(ex.aulas) || ex.aulas.length !== nAulas) {
           const prev = (ex && Array.isArray(ex.aulas)) ? ex.aulas : [];
           dados[tk][sa][sd] = {
-            aulas: Array.from({length: nAulas}, (_, i) => (prev[i] === 1 ? 1 : 0)),
+            aulas: Array.from({length: nAulas}, (_, i) =>
+              prev[i] === 1 ? 1 : prev[i] === 0 ? 0 : null),
             nota:  ex ? (parseFloat(ex.nota) || 0) : 0
           };
         }
@@ -716,16 +717,18 @@ function normalizarChaves(tk) {
 
 // ─── PAYLOAD GLOBAL (para backup/restore) ────────────────────────────
 function buildFullPayload() {
-  const nomes = {}, profs = {};
+  const nomes = {}, profs = {}, discs = {}, turmaInfo = {};
   Object.keys(turmas).forEach(tk => {
-    nomes[tk] = turmas[tk].alunos.map(a => ({id: a.id, nome: a.nome}));
-    profs[tk] = turmas[tk].discs.map(d => ({id: d.id, professor: d.professor}));
+    nomes[tk]     = turmas[tk].alunos.map(a => ({id: a.id, nome: a.nome}));
+    profs[tk]     = turmas[tk].discs.map(d => ({id: d.id, professor: d.professor}));
+    discs[tk]     = turmas[tk].discs.map(d => ({id: d.id, nome: d.nome}));
+    turmaInfo[tk] = { nome: turmas[tk].nome, horario: turmas[tk].horario };
   });
   return {
     v: 6, ts: new Date().toISOString(),
     dados:     JSON.parse(JSON.stringify(dados)),
     aulasData: JSON.parse(JSON.stringify(aulasData)),
-    nomes, profs
+    nomes, profs, discs, turmaInfo
   };
 }
 
@@ -738,7 +741,9 @@ function buildTurmaPayload(tk) {
     dados:     JSON.parse(JSON.stringify(dados[tk]     || {})),
     aulasData: JSON.parse(JSON.stringify(aulasData[tk] || {})),
     nomes:     turmas[tk].alunos.map(a => ({id: a.id, nome: a.nome})),
-    profs:     turmas[tk].discs.map(d => ({id: d.id, professor: d.professor}))
+    profs:     turmas[tk].discs.map(d => ({id: d.id, professor: d.professor})),
+    discs:     turmas[tk].discs.map(d => ({id: d.id, nome: d.nome})),
+    turmaInfo: { nome: turmas[tk].nome, horario: turmas[tk].horario }
   };
 }
 
@@ -772,6 +777,25 @@ function applyPayload(p) {
       if (d && pd.professor) d.professor = pd.professor;
     });
   });
+  // Restaurar nomes das disciplinas
+  if (p.discs) Object.keys(p.discs).forEach(tk => {
+    if (!turmas[tk]) return;
+    p.discs[tk].forEach(pd => {
+      const d = turmas[tk].discs.find(d => d.id === pd.id);
+      if (d && pd.nome) d.nome = pd.nome;
+    });
+  });
+  // Restaurar nome e horário das turmas
+  if (p.turmaInfo) Object.keys(p.turmaInfo).forEach(tk => {
+    if (!turmas[tk]) return;
+    const info = p.turmaInfo[tk];
+    if (info.nome)    { turmas[tk].nome    = info.nome;    DEF[tk].nome    = info.nome; }
+    if (info.horario) { turmas[tk].horario = info.horario; DEF[tk].horario = info.horario; }
+    const tEl = document.getElementById('title-' + tk);
+    const iEl = document.getElementById('info-'  + tk);
+    if (tEl) tEl.textContent = turmas[tk].nome;
+    if (iEl) iEl.textContent = turmas[tk].horario;
+  });
   // BUG H FIX: normalizar chaves após importação JSON (pode ter chaves numéricas)
   Object.keys(DEF).forEach(tk => normalizarChaves(tk));
   fixDados();
@@ -788,8 +812,13 @@ function applyTurmaPayload(tk, p) {
   normalizarChaves(tk);
   if (p.nomes && turmas[tk]) {
     p.nomes.forEach(n => {
-      const a = turmas[tk].alunos.find(a => a.id === n.id);
-      if (a && n.nome) a.nome = n.nome;
+      let a = turmas[tk].alunos.find(a => a.id === n.id);
+      // Alinhar com applyPayload: se aluno não existe localmente, adicionar
+      if (!a && n.id && n.nome) {
+        turmas[tk].alunos.push({id: n.id, nome: n.nome});
+      } else if (a && n.nome) {
+        a.nome = n.nome;
+      }
     });
   }
   if (p.profs && turmas[tk]) {
@@ -797,6 +826,23 @@ function applyTurmaPayload(tk, p) {
       const d = turmas[tk].discs.find(d => d.id === pd.id);
       if (d && pd.professor) d.professor = pd.professor;
     });
+  }
+  // Restaurar nomes das disciplinas
+  if (p.discs && turmas[tk]) {
+    p.discs.forEach(pd => {
+      const d = turmas[tk].discs.find(d => d.id === pd.id);
+      if (d && pd.nome) d.nome = pd.nome;
+    });
+  }
+  // Restaurar nome e horário da turma
+  if (p.turmaInfo && turmas[tk]) {
+    const info = p.turmaInfo;
+    if (info.nome)    { turmas[tk].nome    = info.nome;    DEF[tk].nome    = info.nome; }
+    if (info.horario) { turmas[tk].horario = info.horario; DEF[tk].horario = info.horario; }
+    const tEl = document.getElementById('title-' + tk);
+    const iEl = document.getElementById('info-'  + tk);
+    if (tEl) tEl.textContent = turmas[tk].nome;
+    if (iEl) iEl.textContent = turmas[tk].horario;
   }
   // BUG 2 FIX: fixDados() removido daqui — chamado uma vez no final do arranque
   // Para updates em tempo real (não firstSnap), chamar fixDados para esta turma apenas
@@ -1013,7 +1059,8 @@ function schedSave(tk) {
 
 async function doSaveTurma(tk) {
   const s = tkState[tk];
-  if (s.isSaving) return;
+  // Se já está a gravar, marcar pendente e aguardar — não perder dados
+  if (s.isSaving) { s.pendingSave = true; return; }
   s.isSaving = true;
   s.pendingSave = false;
   // BUG F FIX: não tocar no botão sbtn aqui — controlado centralmente pelo syncNow
@@ -1371,12 +1418,20 @@ function renderCfg() {
   }
   const list = document.getElementById('cfg-discs-list');
   if (list) {
-    list.innerHTML = DISCS.map(d => `
+    // Usar turmas[tA].discs como fonte de verdade para nome e professor actuais
+    // (DISCS.prof e DISCS.nome são apenas defaults iniciais do código)
+    const refTk = Object.keys(turmas)[0];
+    list.innerHTML = DISCS.map(d => {
+      const td = refTk && turmas[refTk] ? turmas[refTk].discs.find(x => x.id === d.id) : null;
+      const nomeActual = td ? td.nome : d.nome;
+      const profActual = td ? td.professor : d.prof;
+      return `
       <div class="disc-row">
         <span class="disc-num">${d.id}</span>
-        <input class="disc-inp" id="cfg-dname-${d.id}" value="${esc(d.nome)}" placeholder="Nome da disciplina">
-        <input class="disc-inp" id="cfg-dprof-${d.id}" value="${esc(d.prof)}" placeholder="Professor">
-      </div>`).join('');
+        <input class="disc-inp" id="cfg-dname-${d.id}" value="${esc(nomeActual)}" placeholder="Nome da disciplina">
+        <input class="disc-inp" id="cfg-dprof-${d.id}" value="${esc(profActual)}" placeholder="Professor">
+      </div>`;
+    }).join('');
   }
 }
 
@@ -1400,7 +1455,7 @@ window.saveCfgTurmas = () => {
     } else if (nAl < cur) {
       const idsRemovidos = turmas[tk].alunos.slice(nAl).map(a => a.id);
       turmas[tk].alunos = turmas[tk].alunos.slice(0, nAl);
-      if (dados[tk]) idsRemovidos.forEach(id => { delete dados[tk][id]; });
+      if (dados[tk]) idsRemovidos.forEach(id => { delete dados[tk][String(id)]; });
     }
     DEF[tk].n = nAl;
     const tEl = document.getElementById('title-' + tk);
@@ -1424,7 +1479,11 @@ window.saveCfgDiscs = () => {
     if (prof) d.prof = prof;
     Object.keys(turmas).forEach(tk => {
       const td = turmas[tk].discs.find(x => x.id === d.id);
-      if (td && nome) td.nome = nome;
+      if (td) {
+        if (nome) td.nome = nome;
+        // Sincronizar professor predefinido com o campo professor da disciplina
+        if (prof) td.professor = prof;
+      }
     });
   });
   Object.keys(rendered).forEach(k => delete rendered[k]);
