@@ -148,6 +148,11 @@ tbody tr:hover td{background:var(--blue-light)}
 .aname{min-width:130px;font-weight:600}
 .pc{text-align:center;width:40px}
 .cb{width:17px;height:17px;cursor:pointer;accent-color:var(--blue2)}
+.btn3{width:32px;height:28px;border:none;border-radius:5px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);transition:var(--t)}
+.btn3.n3{background:var(--border);color:var(--ink3)}
+.btn3.p3{background:var(--green-light);color:var(--green)}
+.btn3.f3{background:var(--red-light);color:var(--red)}
+.btn3:active{transform:scale(.88)}
 .nc{background:var(--blue-light);color:var(--blue);font-weight:700;text-align:center}
 .tc{text-align:center;font-weight:600}
 .tc.p{background:var(--green-light);color:var(--green)}
@@ -558,6 +563,7 @@ function launchApp() {
   const cached = lload();
   if (cached) applyPayload(cached);
 
+
   requestAnimationFrame(() => {
     const ap = document.querySelector('.tpanel.on');
     if (ap) renderTurma(ap.id);
@@ -657,7 +663,7 @@ function fixDados() {
           const prev = (ex && Array.isArray(ex.aulas)) ? ex.aulas : [];
           dados[tk][sa][sd] = {
             aulas: Array.from({length: nAulas}, (_, i) =>
-              prev[i] === 1 ? 1 : prev[i] === 0 ? 0 : null),
+              prev[i] === 1 ? 1 : 0),
             nota:  ex ? (parseFloat(ex.nota) || 0) : 0
           };
         }
@@ -878,6 +884,7 @@ function fbInit() {
           if (remote && !importandoTurmas.has(tk)) {
             tkComDadosRemoto.add(tk); // registar que esta turma tinha dados
             applyTurmaPayload(tk, remote);
+
           }
 
           // Quando TODAS as turmas responderem — fixDados final, render e UI
@@ -888,6 +895,7 @@ function fbInit() {
             if (ap && ap.id !== 'tCFG') renderTurma(ap.id);
             setSyncUI('ok', 'Ligado ✓ — dados actualizados');
             if (importandoTurmas.size === 0) tentarMigracao(tkComDadosRemoto);
+
           }
           return;
         }
@@ -1318,10 +1326,8 @@ window.updateResumo = tk => {
 };
 
 // ─── ACÇÕES ───────────────────────────────────────────────────────────
-// PRESENÇA: checkbox marcado = 1 (presente), desmarcado = 0 (falta/ausente)
-// Valor null = ainda não registado (aula futura) — não conta nem como presença nem falta
+// PRESENÇA: checkbox marcado = 1 (presente), desmarcado = 0 (falta)
 window.marcaP = (tk, aid, did, i, v) => {
-  // BUG 7 FIX: normalizar chaves para string
   const sa = String(aid), sd = String(did);
   if (!dados[tk]?.[sa]?.[sd]) return;
   dados[tk][sa][sd].aulas[i] = v ? 1 : 0;
