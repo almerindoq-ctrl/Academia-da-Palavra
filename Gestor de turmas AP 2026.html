@@ -931,8 +931,10 @@ function tentarMigracao(tkComDadosRemoto) {
 
 async function fbSaveTurma(tk, p) {
   if (!fbOk || !db) return false;
+  // BUG ECO FIX: atribuir lastSaveId ANTES do await set() para que o onValue
+  // consiga reconhecer o eco mesmo que chegue antes do await resolver
+  tkState[tk].lastSaveId = p.sid;
   try {
-    tkState[tk].lastSaveId = p.sid;
     await set(ref(db, `${FB_BASE}/${tk}`), p);
     return true;
   } catch(e) {
@@ -1623,10 +1625,18 @@ window.confirmarImportacao = () => {
     Promise.all(turmasParaGravar.map(tk => doSaveTurma(tk)))
       .then(() => {
         importandoTurmas.clear();
+        // Re-render explícito após save — garante que o UI reflecte os dados
+        // importados e não um estado intermédio causado pelo onValue do Firebase
+        Object.keys(rendered).forEach(k => delete rendered[k]);
+        const apFinal = document.querySelector('.tpanel.on');
+        if (apFinal && apFinal.id !== 'tCFG') renderTurma(apFinal.id);
         toast('✅ Dados importados e guardados no Firebase', 'ok');
       })
       .catch(err => {
         importandoTurmas.clear();
+        Object.keys(rendered).forEach(k => delete rendered[k]);
+        const apFinal = document.querySelector('.tpanel.on');
+        if (apFinal && apFinal.id !== 'tCFG') renderTurma(apFinal.id);
         console.error('Erro ao guardar após importação:', err);
         toast('⚠️ Dados importados mas erro ao guardar na nuvem', 'w');
       });
