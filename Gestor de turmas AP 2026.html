@@ -379,7 +379,7 @@ footer strong{color:var(--ink2)}
     <button class="ebtn suc" onclick="exportAll()">📊 Exportar TODAS (CSV)</button>
     <button class="ebtn gld" onclick="exportJSON()">💾 Backup JSON</button>
     <button class="ebtn pri" onclick="document.getElementById('impFile').click()">📂 Importar JSON</button>
-    <input type="file" id="impFile" accept=".json" style="display:none" onchange="importJSON(this)">
+    <input type="file" id="impFile" accept=".json" style="display:none">
   </div>
 
   <footer>
@@ -1578,21 +1578,7 @@ window.exportJSON = () => {
   toast('💾 Backup guardado com sucesso', 'ok');
 };
 
-window.importJSON = input => {
-  const file = input.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    try {
-      pendingImport = JSON.parse(e.target.result);
-      document.getElementById('importModal').classList.add('show');
-    } catch(err) {
-      toast('❌ Ficheiro JSON inválido', 'e');
-    }
-  };
-  reader.readAsText(file);
-  input.value = '';
-};
+// importJSON: lógica movida para addEventListener de #impFile no arranque
 
 window.confirmarImportacao = () => {
   if (!pendingImport) return;
@@ -1609,7 +1595,16 @@ window.confirmarImportacao = () => {
     }
 
     lsave(buildFullPayload());
-    fecharModal();
+
+    // BUG IMP2 FIX: ler turmasNoJSON ANTES de fecharModal() porque
+    // fecharModal() faz pendingImport = null, tornando-o inacessível depois.
+    const turmasNoJSON = Object.keys(pendingImport.dados || {})
+      .filter(tk => DEF[tk]);
+    const turmasParaGravar = turmasNoJSON.length > 0
+      ? turmasNoJSON
+      : Object.keys(DEF);
+
+    fecharModal(); // agora pode limpar pendingImport sem problema
     Object.keys(rendered).forEach(k => delete rendered[k]);
 
     const activePanel = document.querySelector('.tpanel.on');
@@ -1623,14 +1618,6 @@ window.confirmarImportacao = () => {
     if (fp) fp.classList.add('on');
     if (idx >= 0 && allBtns[idx]) allBtns[idx].classList.add('on');
     renderTurma(targetId);
-
-    // PROBLEMA K FIX: só gravar turmas que existem no JSON importado
-    // — não apagar dados de turmas ausentes no backup
-    const turmasNoJSON = Object.keys(pendingImport.dados || {})
-      .filter(tk => DEF[tk]); // só turmas válidas do DEF actual
-    const turmasParaGravar = turmasNoJSON.length > 0
-      ? turmasNoJSON
-      : Object.keys(DEF); // fallback: gravar todas se JSON não tem estrutura por turma
 
     setSyncUI('saving', 'A guardar dados importados…');
     Promise.all(turmasParaGravar.map(tk => doSaveTurma(tk)))
@@ -1668,6 +1655,26 @@ function dl(content, name, mime) {
 const hoje = () => new Date().toISOString().split('T')[0];
 
 // ─── ARRANQUE ─────────────────────────────────────────────────────────
+
+// BUG IMP FIX: o onchange inline em HTML não é fiável com <script type="module">
+// porque as funções window.* só ficam disponíveis após o módulo carregar.
+// Usar addEventListener dentro do módulo garante que a função já existe.
+document.getElementById('impFile').addEventListener('change', function() {
+  const file = this.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      pendingImport = JSON.parse(e.target.result);
+      document.getElementById('importModal').classList.add('show');
+    } catch(err) {
+      toast('\u274C Ficheiro JSON inválido', 'e');
+    }
+  };
+  reader.readAsText(file);
+  this.value = '';
+});
+
 setupLogin();
 </script>
 </body>
