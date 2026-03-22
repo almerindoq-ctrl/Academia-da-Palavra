@@ -467,7 +467,7 @@ let db, fbOk = false;
 let currentUser = null;  // nome do utilizador autenticado
 let sessionId = Math.random().toString(36).slice(2); // ID único desta sessão
 let presenceRef = null;  // ref Firebase para presença deste utilizador
-let presenceInterval = null; // BUG 4 FIX: ID do heartbeat interval
+let presenceInterval = null;
 
 // Save por turma: cada turma tem o seu próprio timer, flag de saving e lastSaveId
 const tkState = {};
@@ -541,7 +541,7 @@ window.doLogout = () => {
 };
 
 function launchApp() {
-  // BUG 5 FIX: reiniciar estado ao (re)fazer login — evita herdar estado de sessão anterior
+
   Object.keys(tkState).forEach(tk => {
     clearTimeout(tkState[tk].saveTimer);
     tkState[tk] = { saveTimer: null, isSaving: false, pendingSave: false, lastSaveId: null };
@@ -562,7 +562,6 @@ function launchApp() {
   // (evita ecrã em branco durante a ligação)
   const cached = lload();
   if (cached) applyPayload(cached);
-
 
   requestAnimationFrame(() => {
     const ap = document.querySelector('.tpanel.on');
@@ -652,7 +651,7 @@ function fixDados() {
     if (!dados[tk])     dados[tk]     = {};
     if (!aulasData[tk]) aulasData[tk] = {};
     turmas[tk].alunos.forEach(a => {
-      // BUG 7 FIX: usar String() nas chaves — Firebase serializa tudo como string
+
       const sa = String(a.id);
       if (!dados[tk][sa]) dados[tk][sa] = {};
       turmas[tk].discs.forEach(d => {
@@ -670,7 +669,7 @@ function fixDados() {
       });
     });
     turmas[tk].discs.forEach(d => {
-      // BUG E FIX: usar String(d.id) para aulasData — Firebase serializa chaves como string
+
       const sd = String(d.id);
       const nAulas = d.aulas || DEF[tk].aulas;
       const ex = aulasData[tk][sd];
@@ -688,7 +687,7 @@ function fixDados() {
 
 // ─── ACESSO SEGURO A DADOS ────────────────────────────────────────────
 function getDado(tk, aid, did) {
-  // BUG 7 FIX: Firebase converte chaves numéricas para strings — normalizar sempre
+
   const sa = String(aid), sd = String(did);
   return (dados[tk] && dados[tk][sa] && dados[tk][sa][sd])
     ? dados[tk][sa][sd]
@@ -696,7 +695,7 @@ function getDado(tk, aid, did) {
 }
 
 // Normaliza todas as chaves numéricas para string (Firebase serializa assim)
-// BUG D FIX: normalizar também aulasData, não só dados
+
 function normalizarChaves(tk) {
   if (dados[tk]) {
     const novo = {};
@@ -711,7 +710,7 @@ function normalizarChaves(tk) {
     });
     dados[tk] = novo;
   }
-  // BUG D FIX: normalizar aulasData também
+
   if (aulasData[tk]) {
     const novoAD = {};
     Object.keys(aulasData[tk]).forEach(did => {
@@ -767,7 +766,7 @@ function applyPayload(p) {
     if (!turmas[tk]) return;
     p.nomes[tk].forEach(n => {
       let a = turmas[tk].alunos.find(a => a.id === n.id);
-      // PROBLEMA I FIX: se aluno não existe na estrutura actual, adicionar
+
       if (!a && n.id && n.nome) {
         a = {id: n.id, nome: n.nome};
         turmas[tk].alunos.push(a);
@@ -802,7 +801,7 @@ function applyPayload(p) {
     if (tEl) tEl.textContent = turmas[tk].nome;
     if (iEl) iEl.textContent = turmas[tk].horario;
   });
-  // BUG H FIX: normalizar chaves após importação JSON (pode ter chaves numéricas)
+
   Object.keys(DEF).forEach(tk => normalizarChaves(tk));
   fixDados();
   if (p.ts) lastTS = p.ts;
@@ -814,7 +813,7 @@ function applyTurmaPayload(tk, p) {
   if (!p) return false;
   if (p.dados)     dados[tk]     = JSON.parse(JSON.stringify(p.dados));
   if (p.aulasData) aulasData[tk] = JSON.parse(JSON.stringify(p.aulasData));
-  // BUG 7 FIX: normalizar chaves após receber do Firebase (strings vs numbers)
+
   normalizarChaves(tk);
   if (p.nomes && turmas[tk]) {
     p.nomes.forEach(n => {
@@ -850,7 +849,7 @@ function applyTurmaPayload(tk, p) {
     if (tEl) tEl.textContent = turmas[tk].nome;
     if (iEl) iEl.textContent = turmas[tk].horario;
   }
-  // BUG 2 FIX: fixDados() removido daqui — chamado uma vez no final do arranque
+
   // Para updates em tempo real (não firstSnap), chamar fixDados para esta turma apenas
   if (p.ts && (!lastTS || p.ts > lastTS)) lastTS = p.ts;
   return true;
@@ -859,7 +858,7 @@ function applyTurmaPayload(tk, p) {
 // ─── FIREBASE ─────────────────────────────────────────────────────────
 function fbInit() {
   try {
-    // BUG K FIX: evitar erro se Firebase já foi inicializado (ex: duplo login)
+
     const app = getApps().length ? getApp() : initializeApp(FB_CFG);
     db   = getDatabase(app);
     fbOk = true;
@@ -867,7 +866,7 @@ function fbInit() {
     // Contador: aguardar que TODAS as turmas respondam antes de actualizar UI
     const tkKeys = Object.keys(DEF);
     let snapsReceived = 0;
-    const tkComDadosRemoto = new Set(); // BUG 1 FIX: rastrear quais turmas tinham dados no Firebase
+    const tkComDadosRemoto = new Set();
 
     tkKeys.forEach(tk => {
       const tkRef = ref(db, `${FB_BASE}/${tk}`);
@@ -951,7 +950,7 @@ function fbInit() {
 }
 
 // Migração: se Firebase veio vazio mas localStorage tem dados, sincronizar
-// BUG 1 FIX: usar flag de turmas remotas recebidas (não dados[] que já foi preenchido por fixDados)
+
 function tentarMigracao(tkComDadosRemoto) {
   // tkComDadosRemoto = set de turmas que receberam dados reais do Firebase
   // Se NENHUMA turma tinha dados reais no Firebase, mas LS tem dados → migrar
@@ -985,7 +984,7 @@ function tentarMigracao(tkComDadosRemoto) {
 
 async function fbSaveTurma(tk, p) {
   if (!fbOk || !db) return false;
-  // BUG ECO FIX: atribuir lastSaveId ANTES do await set() para que o onValue
+
   // consiga reconhecer o eco mesmo que chegue antes do await resolver
   tkState[tk].lastSaveId = p.sid;
   try {
@@ -1006,7 +1005,6 @@ function setupPresence() {
   set(presenceRef, { name: currentUser, ts: Date.now() });
   onDisconnect(presenceRef).remove();
 
-  // BUG 4 FIX: guardar ID do interval para limpar no logout
   presenceInterval = setInterval(() => {
     if (presenceRef && fbOk) set(presenceRef, { name: currentUser, ts: Date.now() }).catch(()=>{});
   }, 30000);
@@ -1029,7 +1027,7 @@ function setupPresence() {
 }
 
 function cleanupPresence() {
-  // BUG 4 FIX: limpar o interval ao sair para não acumular heartbeats
+
   if (presenceInterval) { clearInterval(presenceInterval); presenceInterval = null; }
   if (presenceRef && fbOk) remove(presenceRef).catch(()=>{});
   presenceRef = null;
@@ -1071,7 +1069,7 @@ async function doSaveTurma(tk) {
   if (s.isSaving) { s.pendingSave = true; return; }
   s.isSaving = true;
   s.pendingSave = false;
-  // BUG F FIX: não tocar no botão sbtn aqui — controlado centralmente pelo syncNow
+
   // Para saves automáticos (schedSave), o botão não precisa de ser desabilitado
   try {
     const p = buildTurmaPayload(tk);
@@ -1108,7 +1106,7 @@ function retryPendentes() {
 }
 
 window.syncNow = async () => {
-  // BUG 3 FIX: desabilitar botão uma vez centralmente para evitar race condition
+
   const btn = document.getElementById('sbtn');
   if (btn) btn.disabled = true;
   Object.keys(DEF).forEach(tk => { clearTimeout(tkState[tk].saveTimer); });
@@ -1125,7 +1123,7 @@ window.syncNow = async () => {
 // ─── LEMBRETE DE BACKUP AO FECHAR ────────────────────────────────────
 window.addEventListener('beforeunload', e => {
   if (!currentUser) return;
-  // ISSUE 1 FIX: forçar save imediato para todas as turmas com save pendente
+
   // (cancela os timers de 600ms e grava agora usando sendBeacon / sync XHR não disponível,
   //  mas pelo menos garantimos que o lsave corre antes de fechar)
   Object.keys(DEF).forEach(tk => {
@@ -1201,7 +1199,7 @@ window.toggleDisc = (tk, did) => {
 
 function buildDiscBody(tk, disc) {
   const t  = turmas[tk];
-  // BUG C FIX: usar String(disc.id) para aulasData
+
   const ai = aulasData[tk][String(disc.id)] || {datas: [], dias: []};
   let h = `<div class="dprof-row">
     <span class="dprof-label">👤 Professor</span>
@@ -1342,7 +1340,7 @@ window.marcaP = (tk, aid, did, i, v) => {
 };
 
 window.editNota = (tk, aid, did, v) => {
-  // BUG 7 FIX: normalizar chaves para string
+
   const sa = String(aid), sd = String(did);
   if (!dados[tk]?.[sa]?.[sd]) return;
   let val = parseFloat(v) || 0;
@@ -1359,7 +1357,7 @@ window.editProf = (tk, did, v) => {
 };
 
 window.editData = (tk, did, i, v) => {
-  // BUG C FIX: normalizar did para string — Firebase usa strings como chaves
+
   const sd = String(did);
   if (aulasData[tk]?.[sd]) { aulasData[tk][sd].datas[i] = v; schedSave(tk); }
 };
@@ -1663,7 +1661,6 @@ window.confirmarImportacao = () => {
 
     lsave(buildFullPayload());
 
-    // BUG IMP2 FIX: ler turmasNoJSON ANTES de fecharModal() porque
     // fecharModal() faz pendingImport = null, tornando-o inacessível depois.
     const turmasNoJSON = Object.keys(pendingImport.dados || {})
       .filter(tk => DEF[tk]);
@@ -1731,9 +1728,6 @@ const hoje = () => new Date().toISOString().split('T')[0];
 
 // ─── ARRANQUE ─────────────────────────────────────────────────────────
 
-// BUG IMP FIX: o onchange inline em HTML não é fiável com <script type="module">
-// porque as funções window.* só ficam disponíveis após o módulo carregar.
-// Usar addEventListener dentro do módulo garante que a função já existe.
 document.getElementById('impFile').addEventListener('change', function() {
   const file = this.files[0];
   if (!file) return;
