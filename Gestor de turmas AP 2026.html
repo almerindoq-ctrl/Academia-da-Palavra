@@ -488,9 +488,11 @@ const pendentePorFalha = new Set();
 // Backup reminder: marcar se exportou JSON nesta sessão
 let exportedThisSession = false;
 
-// ─── AUTENTICAÇÃO FIREBASE ────────────────────────────────────────────
-let auth = null;
+// ─── INICIALIZAR FIREBASE IMEDIATAMENTE ──────────────────────────────
+const _fbApp = getApps().length ? getApp() : initializeApp(FB_CFG);
+const auth   = getAuth(_fbApp);
 
+// ─── AUTENTICAÇÃO FIREBASE ────────────────────────────────────────────
 function setupLogin() {
   // Mostrar chips de utilizadores conhecidos
   const chips = document.getElementById('user-chips');
@@ -502,23 +504,17 @@ function setupLogin() {
     chips.appendChild(b);
   });
 
-  // Inicializar Firebase Auth e observar estado
-  const app = getApps().length ? getApp() : initializeApp(FB_CFG);
-  auth = getAuth(app);
-
+  // Observar estado de autenticação — sessão persistente
   onAuthStateChanged(auth, firebaseUser => {
     if (firebaseUser) {
-      // Utilizador autenticado pelo Firebase — verificar se nome local está definido
       const savedName = sessionStorage.getItem('ap_display_name');
       if (savedName) {
         currentUser = savedName;
         launchApp();
       } else {
-        // Sessão Firebase válida mas sem nome — mostrar login para escolher nome
         signOut(auth).catch(() => {});
       }
     }
-    // Se não autenticado, o ecrã de login já está visível — não fazer nada
   });
 
   // Permitir Enter nos campos
@@ -900,8 +896,7 @@ function applyTurmaPayload(tk, p) {
 function fbInit() {
   try {
 
-    const app = getApps().length ? getApp() : initializeApp(FB_CFG);
-    db   = getDatabase(app);
+    db = getDatabase(_fbApp);
     fbOk = true;
 
     // Contador: aguardar que TODAS as turmas respondam antes de actualizar UI
