@@ -396,6 +396,7 @@ footer strong{color:var(--ink2)}
   </footer>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script type="module">
 import { initializeApp, getApps, getApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getDatabase, ref, set, get, onValue, onDisconnect, serverTimestamp, remove }
@@ -419,7 +420,6 @@ const APP_PASSWORD = 'academia2026';
 const KNOWN_USERS = [
   'Almerindo Assunção',
   'Celma Reis',
-  'Elsando Vicente',
   'Elson Lopes',
   'Emilson António',
   'Ismael Baje',
@@ -1628,16 +1628,21 @@ window.exportCSV = tk => {
   toast('📥 CSV exportado — abre com Excel', 'ok');
 };
 
-window.exportAll = () => {
+window.exportAll = async () => {
+  const zip = new JSZip();
   const tks = Object.keys(DEF);
-  tks.forEach((tk, i) => {
-    setTimeout(() => {
-      const t = turmas[tk];
-      const nome = t.nome.replace(/[^a-zA-Z0-9À-ÿ\s]/g, '').trim().replace(/\s+/g, '_');
-      dl(buildTurmaCSV(tk), 'AP_' + nome + '_' + hoje() + '.csv', 'text/csv;charset=utf-8;');
-    }, i * 500);
+  tks.forEach(tk => {
+    const t = turmas[tk];
+    const nome = t.nome.replace(/[^a-zA-Z0-9À-ÿ\s]/g, '').trim().replace(/\s+/g, '_');
+    zip.file('AP_' + nome + '_' + hoje() + '.csv', buildTurmaCSV(tk));
   });
-  toast('📊 A exportar ' + tks.length + ' ficheiros CSV…', 'ok');
+  const blob = await zip.generateAsync({type: 'blob'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'AcademiaPalavra_' + hoje() + '.zip';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  toast('📦 ZIP com ' + tks.length + ' turmas exportado!', 'ok');
 };
 
 window.exportJSON = () => {
