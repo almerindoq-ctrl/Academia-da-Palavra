@@ -401,7 +401,6 @@ import { initializeApp, getApps, getApp } from 'https://www.gstatic.com/firebase
 import { getDatabase, ref, set, get, onValue, onDisconnect, serverTimestamp, remove }
   from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js';
 
-
 // ─── CONFIGURAÇÃO ────────────────────────────────────────────────────
 const FB_CFG = {
   apiKey:            'AIzaSyCLhhgUyhd4QS1Fw6Q5ai_wQytCcipro_Y',
@@ -413,7 +412,7 @@ const FB_CFG = {
   appId:             '1:685009671697:web:cec07315adce77b11cc3b0'
 };
 
-// Senha de acesso única da escola
+// Senha de acesso única da escola — pode ser alterada aqui
 const APP_PASSWORD = 'academia2026';
 
 // Nomes habituais para acesso rápido
@@ -490,6 +489,7 @@ let exportedThisSession = false;
 
 // ─── AUTENTICAÇÃO LOCAL ───────────────────────────────────────────────
 function setupLogin() {
+  // Mostrar chips de utilizadores conhecidos
   const chips = document.getElementById('user-chips');
   KNOWN_USERS.forEach(name => {
     const b = document.createElement('button');
@@ -499,11 +499,12 @@ function setupLogin() {
     chips.appendChild(b);
   });
 
+  // Verificar sessão guardada
   try {
     const saved = sessionStorage.getItem('ap_session');
     if (saved) {
       const s = JSON.parse(saved);
-      if (s.user && s.ts && Date.now() - s.ts < 8 * 60 * 60 * 1000) {
+      if (s.user && s.ts && Date.now() - s.ts < 8 * 60 * 60 * 1000) { // 8h
         currentUser = s.user;
         launchApp();
         return;
@@ -511,6 +512,7 @@ function setupLogin() {
     }
   } catch(e) {}
 
+  // Permitir Enter nos campos
   document.getElementById('login-pass').onkeydown = e => { if (e.key === 'Enter') doLogin(); };
   document.getElementById('login-user').onkeydown = e => { if (e.key === 'Enter') document.getElementById('login-pass').focus(); };
 }
@@ -859,7 +861,8 @@ function applyTurmaPayload(tk, p) {
 function fbInit() {
   try {
 
-    db = getDatabase(_fbApp);
+    const app = getApps().length ? getApp() : initializeApp(FB_CFG);
+    db   = getDatabase(app);
     fbOk = true;
 
     // Contador: aguardar que TODAS as turmas respondam antes de actualizar UI
