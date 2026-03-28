@@ -400,8 +400,7 @@ footer strong{color:var(--ink2)}
 import { initializeApp, getApps, getApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getDatabase, ref, set, get, onValue, onDisconnect, serverTimestamp, remove }
   from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js';
-import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
-  from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+
 
 // ─── CONFIGURAÇÃO ────────────────────────────────────────────────────
 const FB_CFG = {
@@ -414,7 +413,8 @@ const FB_CFG = {
   appId:             '1:685009671697:web:cec07315adce77b11cc3b0'
 };
 
-// Autenticação via Firebase Authentication (sem senha em claro no código)
+// Senha de acesso única da escola
+const APP_PASSWORD = 'academia2026';
 
 // Nomes habituais para acesso rápido
 const KNOWN_USERS = [
@@ -488,13 +488,8 @@ const pendentePorFalha = new Set();
 // Backup reminder: marcar se exportou JSON nesta sessão
 let exportedThisSession = false;
 
-// ─── INICIALIZAR FIREBASE IMEDIATAMENTE ──────────────────────────────
-const _fbApp = getApps().length ? getApp() : initializeApp(FB_CFG);
-const auth   = getAuth(_fbApp);
-
-// ─── AUTENTICAÇÃO FIREBASE ────────────────────────────────────────────
+// ─── AUTENTICAÇÃO LOCAL ───────────────────────────────────────────────
 function setupLogin() {
-  // Mostrar chips de utilizadores conhecidos
   const chips = document.getElementById('user-chips');
   KNOWN_USERS.forEach(name => {
     const b = document.createElement('button');
@@ -504,72 +499,40 @@ function setupLogin() {
     chips.appendChild(b);
   });
 
-  // Observar estado de autenticação — sessão persistente
-  onAuthStateChanged(auth, firebaseUser => {
-    if (firebaseUser) {
-      const savedName = sessionStorage.getItem('ap_display_name');
-      if (savedName) {
-        currentUser = savedName;
+  try {
+    const saved = sessionStorage.getItem('ap_session');
+    if (saved) {
+      const s = JSON.parse(saved);
+      if (s.user && s.ts && Date.now() - s.ts < 8 * 60 * 60 * 1000) {
+        currentUser = s.user;
         launchApp();
-      } else {
-        signOut(auth).catch(() => {});
+        return;
       }
     }
-  });
+  } catch(e) {}
 
-  // Permitir Enter nos campos
   document.getElementById('login-pass').onkeydown = e => { if (e.key === 'Enter') doLogin(); };
   document.getElementById('login-user').onkeydown = e => { if (e.key === 'Enter') document.getElementById('login-pass').focus(); };
 }
 
-window.doLogin = async () => {
+window.doLogin = () => {
   const user = document.getElementById('login-user').value.trim();
   const pass = document.getElementById('login-pass').value;
   const err  = document.getElementById('login-err');
-  const btn  = document.querySelector('.login-btn');
-
   if (!user) { err.textContent = 'Indica o teu nome.'; return; }
-  if (!pass)  { err.textContent = 'Introduz a senha.'; return; }
-
+  if (pass !== APP_PASSWORD) { err.textContent = 'Senha incorrecta. Tenta novamente.'; return; }
   err.textContent = '';
-  btn.textContent = 'A verificar…';
-  btn.disabled = true;
-
-  // Timeout de segurança — se Firebase não responder em 10s, mostrar erro
-  const timeout = setTimeout(() => {
-    btn.textContent = 'Entrar →';
-    btn.disabled = false;
-    err.textContent = 'Sem resposta do servidor. Verifica a ligação à internet.';
-  }, 10000);
-
-  try {
-    const EMAIL_ESCOLA = 'Almerindoq@gmail.com';
-    await signInWithEmailAndPassword(auth, EMAIL_ESCOLA, pass);
-    clearTimeout(timeout);
-    try { sessionStorage.setItem('ap_display_name', user); } catch(e) {}
-    currentUser = user;
-    launchApp();
-  } catch(e) {
-    clearTimeout(timeout);
-    let msg = 'Senha incorrecta. Tenta novamente.';
-    if (e.code === 'auth/too-many-requests')       msg = 'Demasiadas tentativas. Aguarda alguns minutos.';
-    if (e.code === 'auth/network-request-failed')  msg = 'Sem ligação à internet.';
-    if (e.code === 'auth/invalid-credential')      msg = 'Senha incorrecta. Tenta novamente.';
-    if (e.code === 'auth/operation-not-allowed')   msg = 'Autenticação não activada no Firebase. Activa Email/Password em Authentication.';
-    if (e.code === 'auth/unauthorized-domain')     msg = 'Domínio não autorizado. Adiciona este domínio em Firebase → Authentication → Settings → Authorized domains.';
-    err.textContent = msg + ' (código: ' + e.code + ')';
-    btn.textContent = 'Entrar →';
-    btn.disabled = false;
-  }
+  currentUser = user;
+  try { sessionStorage.setItem('ap_session', JSON.stringify({user, ts: Date.now()})); } catch(e) {}
+  launchApp();
 };
 
-window.doLogout = async () => {
+window.doLogout = () => {
   if (!exportedThisSession) {
     if (!confirm('⚠️ Não fizeste backup JSON nesta sessão.\n\nRecomenda-se exportar antes de sair.\n\nSair mesmo assim?')) return;
   }
   cleanupPresence();
-  try { sessionStorage.removeItem('ap_display_name'); } catch(e) {}
-  if (auth) { try { await signOut(auth); } catch(e) {} }
+  try { sessionStorage.removeItem('ap_session'); } catch(e) {}
   currentUser = null;
   document.getElementById('main-app').classList.add('hidden');
   document.getElementById('login-screen').classList.remove('hidden');
