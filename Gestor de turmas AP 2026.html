@@ -401,6 +401,8 @@ footer strong{color:var(--ink2)}
 import { initializeApp, getApps, getApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getDatabase, ref, set, get, onValue, onDisconnect, serverTimestamp, remove }
   from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js';
+import { getAuth, signInAnonymously, onAuthStateChanged }
+  from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 
 // ─── CONFIGURAÇÃO ────────────────────────────────────────────────────
 const FB_CFG = {
@@ -863,9 +865,33 @@ function fbInit() {
   try {
 
     const app = getApps().length ? getApp() : initializeApp(FB_CFG);
+    const auth = getAuth(app);
     db   = getDatabase(app);
-    fbOk = true;
 
+    // Autenticação anónima — obrigatória para cumprir as regras de segurança
+    // da Realtime Database. O utilizador já provou que sabe a senha do app;
+    // agora o Firebase valida que tem um token legítimo antes de aceitar
+    // qualquer leitura ou escrita.
+    signInAnonymously(auth).catch(e => {
+      console.warn('signInAnonymously error:', e);
+      setSyncUI('err', 'Erro de autenticação Firebase');
+    });
+
+    onAuthStateChanged(auth, user => {
+      if (!user) return; // aguardar token
+      fbOk = true;
+      fbStartListeners();
+    });
+
+  } catch(e) {
+    fbOk = false;
+    console.error('fbInit error:', e);
+    setSyncUI('err', 'Firebase indisponível — modo local');
+  }
+}
+
+function fbStartListeners() {
+  try {
     // Contador: aguardar que TODAS as turmas respondam antes de actualizar UI
     const tkKeys = Object.keys(DEF);
     let snapsReceived = 0;
@@ -947,7 +973,7 @@ function fbInit() {
 
   } catch(e) {
     fbOk = false;
-    console.error('fbInit error:', e);
+    console.error('fbStartListeners error:', e);
     setSyncUI('err', 'Firebase indisponível — modo local');
   }
 }
